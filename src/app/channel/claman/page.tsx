@@ -1131,7 +1131,7 @@ ${bulletLines || '(생성된 인사이트 없음)'}
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis dataKey="name" tick={{ fontSize: 13 }} />
                   <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => v.toLocaleString('ko-KR')} width={70} />
-                  <Tooltip formatter={(v: number) => formatWon(v)} />
+                  <Tooltip formatter={(v: any) => formatWon(Number(v))} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
                   <Bar dataKey="매출" fill="#f59e0b" radius={[4, 4, 0, 0]}>
                     <LabelList dataKey="매출" content={renderRevenueLabel} />

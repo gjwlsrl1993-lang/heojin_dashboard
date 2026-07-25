@@ -1587,7 +1587,7 @@ export default function DashboardPage() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                     <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                     <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${Math.round(v / 10000)}만`} />
-                    <Tooltip formatter={(v: number) => formatWon(v)} />
+                    <Tooltip formatter={(v: any) => formatWon(Number(v))} />
                     <Bar dataKey="매출" fill="#3b82f6" radius={[4, 4, 0, 0]}>
                       <LabelList dataKey="매출" position="top" formatter={(v: number) => v ? v.toLocaleString('ko-KR') : ''} style={{ fontSize: 8, fill: '#3b82f6', fontWeight: 700 }} />
                     </Bar>
@@ -1719,7 +1719,7 @@ export default function DashboardPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} />
                   <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${Math.round(v / 10000)}만`} />
-                  <Tooltip formatter={(v: number) => formatWon(v)} />
+                  <Tooltip formatter={(v: any) => formatWon(Number(v))} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                   <Bar dataKey="매출" name="매출액" fill="#3b82f6" radius={[3, 3, 0, 0]}>
                     <LabelList dataKey="매출" position="top" formatter={(v: number) => v ? v.toLocaleString('ko-KR') : ''} style={{ fontSize: 9, fill: '#3b82f6', fontWeight: 700 }} />

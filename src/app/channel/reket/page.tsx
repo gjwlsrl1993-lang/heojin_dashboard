@@ -985,7 +985,7 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis dataKey="name" tick={{ fontSize: 13 }} />
                   <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${Math.round(v / 10000)}만`} />
-                  <Tooltip formatter={(v: number) => formatWon(v)} />
+                  <Tooltip formatter={(v: any) => formatWon(Number(v))} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
                   <Bar dataKey="매출" fill="#f43f5e" radius={[4, 4, 0, 0]}>
                     <LabelList dataKey="매출" content={renderRevenueLabel} />
