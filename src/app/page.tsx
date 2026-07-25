@@ -1495,16 +1495,16 @@ export default function DashboardPage() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                     <XAxis dataKey="channel" tick={{ fontSize: 12 }} />
                     <YAxis tickFormatter={v => `${(v/10000).toFixed(0)}만`} tick={{ fontSize: 11 }} />
-                    <Tooltip formatter={(v: number) => [formatKRW(v)]} />
+                    <Tooltip formatter={(v: any) => [formatKRW(v)]} />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
                     <Bar dataKey="매출액" name="매출액" fill="#4f46e5" radius={[4,4,0,0]}>
-                      <LabelList dataKey="매출액" position="top" formatter={(v: number) => v ? v.toLocaleString('ko-KR') : ''} style={{ fontSize: 9, fontWeight: 700, fill: '#4f46e5' }} />
+                      <LabelList dataKey="매출액" position="top" formatter={(v: any) => v ? v.toLocaleString('ko-KR') : ''} style={{ fontSize: 9, fontWeight: 700, fill: '#4f46e5' }} />
                     </Bar>
                     <Bar dataKey="순매출액" name="순매출액" fill="#059669" radius={[4,4,0,0]}>
-                      <LabelList dataKey="순매출액" position="top" formatter={(v: number) => v ? v.toLocaleString('ko-KR') : ''} style={{ fontSize: 9, fontWeight: 700, fill: '#059669' }} />
+                      <LabelList dataKey="순매출액" position="top" formatter={(v: any) => v ? v.toLocaleString('ko-KR') : ''} style={{ fontSize: 9, fontWeight: 700, fill: '#059669' }} />
                     </Bar>
                     <Bar dataKey="전년도매출액" name="전년도 매출액" fill="#94a3b8" radius={[4,4,0,0]}>
-                      <LabelList dataKey="전년도매출액" position="top" formatter={(v: number) => v ? v.toLocaleString('ko-KR') : ''} style={{ fontSize: 9, fontWeight: 700, fill: '#64748b' }} />
+                      <LabelList dataKey="전년도매출액" position="top" formatter={(v: any) => v ? v.toLocaleString('ko-KR') : ''} style={{ fontSize: 9, fontWeight: 700, fill: '#64748b' }} />
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
@@ -1556,7 +1556,7 @@ export default function DashboardPage() {
                       label={renderPieLabel} labelLine={false}>
                       {pieChartData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                     </Pie>
-                    <Tooltip formatter={(v: number) => formatKRW(v)} />
+                    <Tooltip formatter={(v: any) => formatKRW(v)} />
                   </PieChart>
                 </ResponsiveContainer>
               )}
@@ -1589,14 +1589,14 @@ export default function DashboardPage() {
                     <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${Math.round(v / 10000)}만`} />
                     <Tooltip formatter={(v: any) => formatWon(Number(v))} />
                     <Bar dataKey="매출" fill="#3b82f6" radius={[4, 4, 0, 0]}>
-                      <LabelList dataKey="매출" position="top" formatter={(v: number) => v ? v.toLocaleString('ko-KR') : ''} style={{ fontSize: 8, fill: '#3b82f6', fontWeight: 700 }} />
+                      <LabelList dataKey="매출" position="top" formatter={(v: any) => v ? v.toLocaleString('ko-KR') : ''} style={{ fontSize: 8, fill: '#3b82f6', fontWeight: 700 }} />
                     </Bar>
                     <Bar dataKey="순매출액" fill="#059669" radius={[4, 4, 0, 0]}>
-                      <LabelList dataKey="순매출액" position="top" formatter={(v: number) => v ? v.toLocaleString('ko-KR') : ''} style={{ fontSize: 8, fill: '#059669', fontWeight: 700 }} />
+                      <LabelList dataKey="순매출액" position="top" formatter={(v: any) => v ? v.toLocaleString('ko-KR') : ''} style={{ fontSize: 8, fill: '#059669', fontWeight: 700 }} />
                     </Bar>
                     {salesChartHasPrevYearData && (
                       <Bar dataKey="작년순매출액" fill="#475569" radius={[4, 4, 0, 0]}>
-                        <LabelList dataKey="작년순매출액" position="top" formatter={(v: number) => v ? v.toLocaleString('ko-KR') : ''} style={{ fontSize: 8, fill: '#475569', fontWeight: 700 }} />
+                        <LabelList dataKey="작년순매출액" position="top" formatter={(v: any) => v ? v.toLocaleString('ko-KR') : ''} style={{ fontSize: 8, fill: '#475569', fontWeight: 700 }} />
                       </Bar>
                     )}
                   </BarChart>
@@ -1636,14 +1636,14 @@ export default function DashboardPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                   <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip formatter={(v: number) => `${v}개`} />
+                  <Tooltip formatter={(v: any) => `${v}개`} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
                   <Bar dataKey="판매수량" fill="#f59e0b" radius={[4, 4, 0, 0]}>
-                    <LabelList dataKey="판매수량" position="top" formatter={(v: number) => v ? `${v}개` : ''} style={{ fontSize: 9, fill: '#f59e0b', fontWeight: 700 }} />
+                    <LabelList dataKey="판매수량" position="top" formatter={(v: any) => v ? `${v}개` : ''} style={{ fontSize: 9, fill: '#f59e0b', fontWeight: 700 }} />
                   </Bar>
                   {salesChartHasPrevYearData && (
                     <Bar dataKey="작년판매수량" fill="#94a3b8" radius={[4, 4, 0, 0]}>
-                      <LabelList dataKey="작년판매수량" position="top" formatter={(v: number) => v ? `${v}개` : ''} style={{ fontSize: 9, fill: '#64748b', fontWeight: 700 }} />
+                      <LabelList dataKey="작년판매수량" position="top" formatter={(v: any) => v ? `${v}개` : ''} style={{ fontSize: 9, fill: '#64748b', fontWeight: 700 }} />
                     </Bar>
                   )}
                 </BarChart>
@@ -1722,10 +1722,10 @@ export default function DashboardPage() {
                   <Tooltip formatter={(v: any) => formatWon(Number(v))} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                   <Bar dataKey="매출" name="매출액" fill="#3b82f6" radius={[3, 3, 0, 0]}>
-                    <LabelList dataKey="매출" position="top" formatter={(v: number) => v ? v.toLocaleString('ko-KR') : ''} style={{ fontSize: 9, fill: '#3b82f6', fontWeight: 700 }} />
+                    <LabelList dataKey="매출" position="top" formatter={(v: any) => v ? v.toLocaleString('ko-KR') : ''} style={{ fontSize: 9, fill: '#3b82f6', fontWeight: 700 }} />
                   </Bar>
                   <Bar dataKey="순매출액" name="순매출액" fill="#059669" radius={[3, 3, 0, 0]}>
-                    <LabelList dataKey="순매출액" position="top" formatter={(v: number) => v ? v.toLocaleString('ko-KR') : ''} style={{ fontSize: 9, fill: '#059669', fontWeight: 700 }} />
+                    <LabelList dataKey="순매출액" position="top" formatter={(v: any) => v ? v.toLocaleString('ko-KR') : ''} style={{ fontSize: 9, fill: '#059669', fontWeight: 700 }} />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>

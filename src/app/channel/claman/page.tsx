@@ -1154,14 +1154,14 @@ ${bulletLines || '(생성된 인사이트 없음)'}
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis dataKey="name" tick={{ fontSize: 13 }} />
                   <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip formatter={(v: number) => `${v}건`} />
+                  <Tooltip formatter={(v: any) => `${v}건`} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
                   <Bar dataKey="판매수량" fill="#e11d48" radius={[4, 4, 0, 0]}>
-                    <LabelList dataKey="판매수량" position="top" formatter={(v: number) => v ? `${v}건` : ''} style={{ fontSize: 9, fill: '#e11d48', fontWeight: 700 }} />
+                    <LabelList dataKey="판매수량" position="top" formatter={(v: any) => v ? `${v}건` : ''} style={{ fontSize: 9, fill: '#e11d48', fontWeight: 700 }} />
                   </Bar>
                   {chartHasPrevYearData && (
                     <Bar dataKey="작년판매수량" fill="#94a3b8" radius={[4, 4, 0, 0]}>
-                      <LabelList dataKey="작년판매수량" position="top" formatter={(v: number) => v ? `${v}건` : ''} style={{ fontSize: 9, fill: '#64748b', fontWeight: 700 }} />
+                      <LabelList dataKey="작년판매수량" position="top" formatter={(v: any) => v ? `${v}건` : ''} style={{ fontSize: 9, fill: '#64748b', fontWeight: 700 }} />
                     </Bar>
                   )}
                 </BarChart>
@@ -1269,9 +1269,9 @@ ${bulletLines || '(생성된 인사이트 없음)'}
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                       <XAxis type="number" tick={{ fontSize: 11 }} />
                       <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={70} />
-                      <Tooltip formatter={(v: number) => `${v}건`} />
+                      <Tooltip formatter={(v: any) => `${v}건`} />
                       <Bar dataKey="판매량" fill="#8b5cf6" radius={[0, 4, 4, 0]}>
-                        <LabelList dataKey="판매량" position="right" formatter={(v: number) => v ? `${v}건` : ''} style={{ fontSize: 11, fill: '#8b5cf6', fontWeight: 700 }} />
+                        <LabelList dataKey="판매량" position="right" formatter={(v: any) => v ? `${v}건` : ''} style={{ fontSize: 11, fill: '#8b5cf6', fontWeight: 700 }} />
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
@@ -1395,16 +1395,16 @@ ${bulletLines || '(생성된 인사이트 없음)'}
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis dataKey="name" tick={{ fontSize: 13 }} />
                   <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip formatter={(v: number) => `${v}개`} />
+                  <Tooltip formatter={(v: any) => `${v}개`} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
                   <Bar dataKey="입고수량" fill="#2563eb" radius={[4, 4, 0, 0]} cursor="pointer"
                     onClick={(_data: any, index: number) => openStockMonthModal(chartYear, index)}>
-                    <LabelList dataKey="입고수량" position="top" formatter={(v: number) => v ? `${v}개` : ''} style={{ fontSize: 9, fill: '#2563eb', fontWeight: 700 }} />
+                    <LabelList dataKey="입고수량" position="top" formatter={(v: any) => v ? `${v}개` : ''} style={{ fontSize: 9, fill: '#2563eb', fontWeight: 700 }} />
                   </Bar>
                   {chartStockHasPrevYearData && (
                     <Bar dataKey="작년입고수량" fill="#94a3b8" radius={[4, 4, 0, 0]} cursor="pointer"
                       onClick={(_data: any, index: number) => openStockMonthModal(chartYear - 1, index)}>
-                      <LabelList dataKey="작년입고수량" position="top" formatter={(v: number) => v ? `${v}개` : ''} style={{ fontSize: 9, fill: '#64748b', fontWeight: 700 }} />
+                      <LabelList dataKey="작년입고수량" position="top" formatter={(v: any) => v ? `${v}개` : ''} style={{ fontSize: 9, fill: '#64748b', fontWeight: 700 }} />
                     </Bar>
                   )}
                 </BarChart>
@@ -1578,9 +1578,9 @@ ${bulletLines || '(생성된 인사이트 없음)'}
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                       <XAxis type="number" tick={{ fontSize: 11 }} />
                       <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={170} />
-                      <Tooltip formatter={(v: number) => `${v}개`} />
+                      <Tooltip formatter={(v: any) => `${v}개`} />
                       <Bar dataKey="입고수량" fill="#2563eb" radius={[0, 4, 4, 0]}>
-                        <LabelList dataKey="입고수량" position="right" formatter={(v: number) => v ? `${v}개` : ''} style={{ fontSize: 11, fill: '#2563eb', fontWeight: 700 }} />
+                        <LabelList dataKey="입고수량" position="right" formatter={(v: any) => v ? `${v}개` : ''} style={{ fontSize: 11, fill: '#2563eb', fontWeight: 700 }} />
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>

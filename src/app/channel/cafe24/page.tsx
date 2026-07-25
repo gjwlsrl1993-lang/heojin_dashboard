@@ -1062,9 +1062,9 @@ export default function Cafe24Page() {
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                       <XAxis type="number" tick={{ fontSize: 11 }} />
                       <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={70} />
-                      <Tooltip formatter={(v: number) => `${v}건`} />
+                      <Tooltip formatter={(v: any) => `${v}건`} />
                       <Bar dataKey="판매량" fill="#8b5cf6" radius={[0, 4, 4, 0]}>
-                        <LabelList dataKey="판매량" position="right" formatter={(v: number) => v ? `${v}건` : ''} style={{ fontSize: 11, fill: '#8b5cf6', fontWeight: 700 }} />
+                        <LabelList dataKey="판매량" position="right" formatter={(v: any) => v ? `${v}건` : ''} style={{ fontSize: 11, fill: '#8b5cf6', fontWeight: 700 }} />
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
