@@ -1743,14 +1743,14 @@ export default function DashboardPage() {
           {/* 광고 성과지표 — 연도 / 월별 KPI 카드는 1:1 비율로 한 줄, 월별 성과 지표(차트+표)는 다음 줄 전체 사용
               현재는 무신사만 광고비·전환매출을 기록하고 있어서 무신사 기준으로만 표시하고, 다른 채널도 광고 데이터가 쌓이면 함께 반영하면 됨 */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-            <div className="chart-card" style={{ border: '1px solid #94a3b8' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+            <div className="chart-card" style={{ border: '1px solid #94a3b8', position: 'relative' }}>
+              <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <button onClick={() => setAdYear(y => y - 1)} style={monthBtnStyle}>◀</button>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#000' }}>{adYear}년</span>
+                <button onClick={() => setAdYear(y => y + 1)} style={monthBtnStyle}>▶</button>
+              </div>
+              <div style={{ marginBottom: 4 }}>
                 <div className="chart-title" style={{ margin: 0, textAlign: 'center' }}>{adYear}년 연도 광고 성과지표</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <button onClick={() => setAdYear(y => y - 1)} style={monthBtnStyle}>◀</button>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#000' }}>{adYear}년</span>
-                  <button onClick={() => setAdYear(y => y + 1)} style={monthBtnStyle}>▶</button>
-                </div>
               </div>
               <div className="chart-sub" style={{ textAlign: 'center' }}>무신사 기준 · 다른 채널은 광고 데이터 연동 후 반영 예정</div>
               {adLoading ? (
@@ -1787,14 +1787,14 @@ export default function DashboardPage() {
               )}
             </div>
 
-            <div className="chart-card" style={{ border: '1px solid #94a3b8' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+            <div className="chart-card" style={{ border: '1px solid #94a3b8', position: 'relative' }}>
+              <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <button onClick={prevAdMonth} style={monthBtnStyle}>◀</button>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#000' }}>{adYear}.{adMonthStr}</span>
+                <button onClick={nextAdMonth} style={monthBtnStyle}>▶</button>
+              </div>
+              <div style={{ marginBottom: 4 }}>
                 <div className="chart-title" style={{ margin: 0, textAlign: 'center' }}>월별 광고 성과지표</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <button onClick={prevAdMonth} style={monthBtnStyle}>◀</button>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#000' }}>{adYear}.{adMonthStr}</span>
-                  <button onClick={nextAdMonth} style={monthBtnStyle}>▶</button>
-                </div>
               </div>
               <div className="chart-sub" style={{ textAlign: 'center' }}>무신사 기준 · 선택한 달의 광고 실적</div>
               {adLoading ? (
@@ -1833,14 +1833,14 @@ export default function DashboardPage() {
           </div>
 
           {/* 월별 성과 지표 — 다음 줄 전체 폭 사용, 광고비·전환매출·ROAS·ACOS·TACOS를 차트+표로 함께 표시 */}
-          <div className="chart-card" style={{ marginBottom: 24, border: '1px solid #94a3b8' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+          <div className="chart-card" style={{ marginBottom: 24, border: '1px solid #94a3b8', position: 'relative' }}>
+            <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <button onClick={() => setAdYear(y => y - 1)} style={monthBtnStyle}>◀</button>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#000' }}>{adYear}년</span>
+              <button onClick={() => setAdYear(y => y + 1)} style={monthBtnStyle}>▶</button>
+            </div>
+            <div style={{ marginBottom: 4 }}>
               <div className="chart-title" style={{ margin: 0, textAlign: 'center' }}>{adYear}년 월별 성과 지표</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <button onClick={() => setAdYear(y => y - 1)} style={monthBtnStyle}>◀</button>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#000' }}>{adYear}년</span>
-                <button onClick={() => setAdYear(y => y + 1)} style={monthBtnStyle}>▶</button>
-              </div>
             </div>
             <div className="chart-sub" style={{ textAlign: 'center' }}>월별 광고비 · 전환매출 · 충전광고비 · ROAS · ACOS · TACOS (무신사 기준)</div>
 
