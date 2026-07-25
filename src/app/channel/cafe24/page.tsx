@@ -91,7 +91,7 @@ function buildItemMatchIndex<T extends { sku?: string; name?: string; option_nam
   const byLooseSku = new Map<string, T>()
 
   items.forEach(it => {
-    const sku = normalizeSku(it.sku)
+    const sku = normalizeSku(it.sku || '')
     const name = String(it.name || '').trim().toUpperCase()
     const opt = normalizeOption(it.option_name || '')
     if (sku) {

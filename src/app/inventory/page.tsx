@@ -752,17 +752,17 @@ export default function InventoryPage() {
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <input placeholder="상품명 / SKU / 카테고리 검색..." value={search}
             onChange={e => setSearch(e.target.value)}
-            style={{ padding: '8px 12px', border: '1px solid #94a3b8', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', width: 220 }} />
+            style={{ padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', width: 220 }} />
           <input ref={excelInputRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }}
             onChange={e => { const f = e.target.files?.[0]; if (f) handleExcelUpload(f) }} />
           <button onClick={() => excelInputRef.current?.click()} disabled={uploading}
-            style={{ padding: '9px 16px', border: '1px solid #94a3b8', borderRadius: 8, background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#475569' }}>
+            style={{ padding: '9px 16px', border: '1px solid #e2e8f0', borderRadius: 8, background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#475569' }}>
             {uploading ? '업로드 중...' : '📤 엑셀 업로드'}
           </button>
           <input ref={reorderExcelInputRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }}
             onChange={e => { const f = e.target.files?.[0]; if (f) handleReorderExcelUpload(f) }} />
           <button onClick={() => reorderExcelInputRef.current?.click()} disabled={uploadingReorder}
-            style={{ padding: '9px 16px', border: '1px solid #94a3b8', borderRadius: 8, background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#475569' }}>
+            style={{ padding: '9px 16px', border: '1px solid #e2e8f0', borderRadius: 8, background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#475569' }}>
             {uploadingReorder ? '업로드 중...' : '📤 리오더 업로드'}
           </button>
           <button onClick={deleteAllItems} disabled={saving}
@@ -776,13 +776,13 @@ export default function InventoryPage() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600 }}>시즌:</span>
         <select value={selectedSeason} onChange={e => setSelectedSeason(e.target.value)}
-          style={{ padding: '7px 12px', border: '1px solid #94a3b8', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', background: '#fff', color: '#1e293b', fontWeight: 600, cursor: 'pointer', minWidth: 100 }}>
+          style={{ padding: '7px 12px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', background: '#fff', color: '#1e293b', fontWeight: 600, cursor: 'pointer', minWidth: 100 }}>
           <option value="전체">전체</option>
           {SEASONS.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
         <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600, marginLeft: 8 }}>카테고리:</span>
         <select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)}
-          style={{ padding: '7px 12px', border: '1px solid #94a3b8', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', background: '#fff', color: '#1e293b', fontWeight: 600, cursor: 'pointer', minWidth: 100 }}>
+          style={{ padding: '7px 12px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', background: '#fff', color: '#1e293b', fontWeight: 600, cursor: 'pointer', minWidth: 100 }}>
           <option value="전체">전체</option>
           {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
@@ -836,7 +836,7 @@ export default function InventoryPage() {
           </div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button onClick={() => setShowAddForm(false)}
-              style={{ padding: '8px 18px', border: '1px solid #94a3b8', borderRadius: 8, background: '#f8fafc', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>취소</button>
+              style={{ padding: '8px 18px', border: '1px solid #e2e8f0', borderRadius: 8, background: '#f8fafc', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>취소</button>
             <button onClick={addItem} disabled={saving || !newItem.name}
               style={{ padding: '8px 18px', background: '#4f46e5', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
               {saving ? '저장 중...' : '등록'}
@@ -1062,7 +1062,7 @@ export default function InventoryPage() {
                           {sponsorshipOutstanding(item.id) > 0 && (
                             <button onClick={() => returnSponsorship(item.id)}
                               title="회수 처리"
-                              style={{ border: '1px solid #94a3b8', background: '#fff', cursor: 'pointer', fontSize: 11, color: '#4f46e5', padding: '2px 6px', borderRadius: 6, fontWeight: 700 }}>
+                              style={{ border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontSize: 11, color: '#4f46e5', padding: '2px 6px', borderRadius: 6, fontWeight: 700 }}>
                               ↩ 회수
                             </button>
                           )}
@@ -1130,7 +1130,7 @@ export default function InventoryPage() {
                         ) : (
                           <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
                             <button onClick={() => { setEditingId(item.id); setEditValues({ ...item }) }}
-                              style={{ padding: '5px 10px', border: '1px solid #94a3b8', borderRadius: 6, background: '#f8fafc', cursor: 'pointer', fontSize: 12, color: '#475569', fontWeight: 600 }}>
+                              style={{ padding: '5px 10px', border: '1px solid #e2e8f0', borderRadius: 6, background: '#f8fafc', cursor: 'pointer', fontSize: 12, color: '#475569', fontWeight: 600 }}>
                               수정
                             </button>
                             <button onClick={() => deleteItem(item.id)}
@@ -1168,7 +1168,7 @@ export default function InventoryPage() {
               <thead>
                 <tr style={{ background: '#f8fafc' }}>
                   {['매장', '재고'].map(h => (
-                    <th key={h} style={{ padding: '8px', textAlign: 'center', fontSize: 11, color: '#94a3b8', fontWeight: 700, borderBottom: '1px solid #94a3b8' }}>{h}</th>
+                    <th key={h} style={{ padding: '8px', textAlign: 'center', fontSize: 11, color: '#94a3b8', fontWeight: 700, borderBottom: '1px solid #e2e8f0' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -1179,7 +1179,7 @@ export default function InventoryPage() {
                     <td style={{ padding: '8px', textAlign: 'center', fontWeight: 700, color: '#7c3aed' }}>{row.qty}개</td>
                   </tr>
                 ))}
-                <tr style={{ borderTop: '2px solid #94a3b8', fontWeight: 800 }}>
+                <tr style={{ borderTop: '2px solid #e2e8f0', fontWeight: 800 }}>
                   <td style={{ padding: '8px', textAlign: 'center' }}>합계</td>
                   <td style={{ padding: '8px', textAlign: 'center' }}>{offlineTotalFor(offlineDetailItem)}개</td>
                 </tr>
@@ -1237,7 +1237,7 @@ export default function InventoryPage() {
                 <thead>
                   <tr style={{ background: '#f8fafc' }}>
                     {['일자', '옵션', '차수', '수량', '업체', '메모', ''].map(h => (
-                      <th key={h} style={{ padding: '8px', textAlign: 'center', fontSize: 11, color: '#94a3b8', fontWeight: 700, borderBottom: '1px solid #94a3b8' }}>{h}</th>
+                      <th key={h} style={{ padding: '8px', textAlign: 'center', fontSize: 11, color: '#94a3b8', fontWeight: 700, borderBottom: '1px solid #e2e8f0' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -1291,7 +1291,7 @@ export default function InventoryPage() {
                   <thead>
                     <tr style={{ background: '#f8fafc' }}>
                       {['채널', '판매수량', '매출액', '순매출액'].map(h => (
-                        <th key={h} style={{ padding: '8px', textAlign: 'center', fontSize: 11, color: '#94a3b8', fontWeight: 700, borderBottom: '1px solid #94a3b8' }}>{h}</th>
+                        <th key={h} style={{ padding: '8px', textAlign: 'center', fontSize: 11, color: '#94a3b8', fontWeight: 700, borderBottom: '1px solid #e2e8f0' }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -1304,7 +1304,7 @@ export default function InventoryPage() {
                         <td style={{ padding: '8px', textAlign: 'center' }}>{formatFullKRW(c.net)}</td>
                       </tr>
                     ))}
-                    <tr style={{ borderTop: '2px solid #94a3b8', fontWeight: 800 }}>
+                    <tr style={{ borderTop: '2px solid #e2e8f0', fontWeight: 800 }}>
                       <td style={{ padding: '8px', textAlign: 'center' }}>합계</td>
                       <td style={{ padding: '8px', textAlign: 'center' }}>{salesDetailData.totalQty}개</td>
                       <td style={{ padding: '8px', textAlign: 'center' }}>{formatFullKRW(salesDetailData.totalRevenue)}</td>
@@ -1392,7 +1392,7 @@ export default function InventoryPage() {
 
 function KpiCard({ label, value, sub, color }: { label: string; value: string; sub: string; color?: string }) {
   return (
-    <div style={{ background: '#fff', border: '1px solid #94a3b8', borderRadius: 14, padding: 18 }}>
+    <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, padding: 18 }}>
       <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 8 }}>{label}</div>
       <div style={{ fontSize: 22, fontWeight: 800, color: color || '#0f172a', marginBottom: 4 }}>{value}</div>
       <div style={{ fontSize: 12, color: '#94a3b8' }}>{sub}</div>
@@ -1405,7 +1405,7 @@ function FormField({ label, value, onChange, placeholder, type = 'text' }: any) 
     <div>
       <div style={labelStyle}>{label}</div>
       <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-        style={{ width: '100%', padding: '8px 10px', border: '1px solid #94a3b8', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', background: '#fff' }} />
+        style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', background: '#fff' }} />
     </div>
   )
 }
@@ -1432,5 +1432,5 @@ function groupHeaderStyle(color: string, emphasized = false): React.CSSPropertie
 const groupHeaderSubStyle: React.CSSProperties = { fontSize: 9, color: '#94a3b8', fontWeight: 600, marginLeft: 4, textTransform: 'uppercase' }
 
 const labelStyle: React.CSSProperties = { fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 4 }
-const selectStyle: React.CSSProperties = { width: '100%', padding: '8px 10px', border: '1px solid #94a3b8', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', background: '#fff' }
-const inlineInputStyle: React.CSSProperties = { padding: '5px 8px', border: '1px solid #94a3b8', borderRadius: 6, fontSize: 12, fontFamily: 'inherit', background: '#fff', width: '100%' }
+const selectStyle: React.CSSProperties = { width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', background: '#fff' }
+const inlineInputStyle: React.CSSProperties = { padding: '5px 8px', border: '1px solid #e2e8f0', borderRadius: 6, fontSize: 12, fontFamily: 'inherit', background: '#fff', width: '100%' }
