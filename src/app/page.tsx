@@ -1848,7 +1848,7 @@ export default function DashboardPage() {
                     <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                     <YAxis yAxisId="left" tickFormatter={v => `${(v/10000).toFixed(0)}만`} tick={{ fontSize: 10 }} />
                     <YAxis yAxisId="right" orientation="right" tickFormatter={v => `${v}%`} tick={{ fontSize: 10 }} />
-                    <Tooltip formatter={(v: number, name: string) => ['ROAS','ACOS','TACOS'].includes(name) ? [`${v}%`, name] : [formatWon(v), name]} />
+                    <Tooltip formatter={(v: any, name: any) => ['ROAS','ACOS','TACOS'].includes(name) ? [`${v}%`, name] : [formatWon(v), name]} />
                     <Legend wrapperStyle={{ fontSize: 11 }} />
                     <Bar yAxisId="left" dataKey="광고비" fill="#f43f5e" radius={[4,4,0,0]} />
                     <Bar yAxisId="left" dataKey="전환매출" fill="#34d399" radius={[4,4,0,0]} />
