@@ -763,19 +763,22 @@ ${bulletLines || '(참고할 만한 규칙 기반 인사이트 없음)'}
                     <span style={{ fontSize: 18 }}>🤖</span>
                     <div style={{ fontWeight: 800, fontSize: 16 }}>AI 추천 인사이트</div>
                   </div>
-                  <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700, transform: insightsOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>▼</span>
+                  <span style={{ fontSize: 12, color: '#757575', fontWeight: 700, transform: insightsOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>▼</span>
                 </div>
                 {insightsOpen && (
                   <>
-                    <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 18 }}>
-                      {year}년 {viewMonthIdx + 1}월 기준 데이터를 바탕으로 자동 생성된 참고용 피드백이에요
+                    <div style={{ fontSize: 12, color: '#757575', marginBottom: 4 }}>
+                      {year}년 {viewMonthIdx + 1}월 기준 데이터를 바탕으로 자동 생성된 참고용 피드백이에요.
+                    </div>
+                    <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 18 }}>
+                      ANTHROPIC_API_KEY 설정 필요 &gt; gemini, claude
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 16 }}>
                       {groups.map(g => (
                         <div key={g.title} style={{ background: '#fff', borderRadius: 12, padding: 16 }}>
                           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10, color: g.color }}>{g.title}</div>
                           {g.items.length === 0 ? (
-                            <div style={{ fontSize: 12, color: '#94a3b8' }}>아직 참고할 만한 데이터가 부족해요.</div>
+                            <div style={{ fontSize: 12, color: '#757575' }}>아직 참고할 만한 데이터가 부족해요.</div>
                           ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                               {g.items.map((text, i) => (
@@ -789,38 +792,11 @@ ${bulletLines || '(참고할 만한 규칙 기반 인사이트 없음)'}
                         </div>
                       ))}
                     </div>
-
-                    <div style={{ borderTop: '1px solid #f1f5f9', margin: '12px 0' }} />
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
-                      <div style={{ fontWeight: 700, fontSize: 13, color: '#4f46e5' }}>🤖 Claude AI 분석</div>
-                      <button onClick={runClaudeAI} disabled={claudeLoading}
-                        style={{ border: '1px solid #4f46e5', background: claudeLoading ? '#f8fafc' : '#4f46e5', color: claudeLoading ? '#94a3b8' : '#fff', cursor: claudeLoading ? 'default' : 'pointer', fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 8 }}>
-                        {claudeLoading ? '분석 중...' : 'Claude 분석 보기'}
-                      </button>
-                    </div>
-                    <div style={{ background: '#fff', borderRadius: 12, padding: 16 }}>
-                      {!claudeLoading && !claudeResult && (
-                        <div style={{ fontSize: 12, color: '#94a3b8' }}>버튼을 누르면 Claude가 실제로 데이터를 분석합니다.</div>
-                      )}
-                      {claudeLoading && (
-                        <div style={{ fontSize: 12, color: '#94a3b8' }}>Claude가 데이터를 분석하고 있어요...</div>
-                      )}
-                      {!claudeLoading && claudeResult && (
-                        <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.7, fontSize: 13, color: '#374151' }}>{claudeResult}</div>
-                      )}
-                    </div>
                   </>
                 )}
               </div>
             )
           })()}
-
-          {/* 연도 변경 */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 6, marginBottom: 16 }}>
-            <button onClick={() => setYear(y => y - 1)} style={yearBtnStyle}>◀</button>
-            <span style={{ fontWeight: 700, fontSize: 13, minWidth: 48, textAlign: 'center' }}>{year}년</span>
-            <button onClick={() => setYear(y => y + 1)} style={yearBtnStyle}>▶</button>
-          </div>
 
           {/* 연간 KPI */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, marginBottom: 20 }}>
@@ -840,12 +816,12 @@ ${bulletLines || '(참고할 만한 규칙 기반 인사이트 없음)'}
                 {formatWon(totalGross)}
                 <YoyBadge pct={yoyDashboardPct} />
               </div>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4 }}>작년 {formatWon(prevYearTotalGross)}</div>
-              <div style={{ fontSize: 12, color: '#94a3b8' }}>
+              <div style={{ fontSize: 12, color: '#757575', marginBottom: 4 }}>작년 {formatWon(prevYearTotalGross)}</div>
+              <div style={{ fontSize: 12, color: '#757575' }}>
                 결제금액 합계 (직접 입력값, 할인 반영 후)
                 {hasData && (
                   <span style={{ marginLeft: 6, color: '#64748b', fontWeight: 700 }}>
-                    {totalNetQty}건 <span style={{ fontWeight: 500, color: '#94a3b8' }}>(판매{totalQtySale}/환불{totalQtyRefund})</span>
+                    {totalNetQty}건 <span style={{ fontWeight: 500, color: '#757575' }}>(판매{totalQtySale}/환불{totalQtyRefund})</span>
                   </span>
                 )}
               </div>
@@ -862,19 +838,24 @@ ${bulletLines || '(참고할 만한 규칙 기반 인사이트 없음)'}
                 {formatWon(totalNet)}
                 <YoyBadge pct={yoyNetPct} />
               </div>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4 }}>작년 {formatWon(prevYearTotalNet)}</div>
+              <div style={{ fontSize: 12, color: '#757575', marginBottom: 4 }}>작년 {formatWon(prevYearTotalNet)}</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
                 <span style={{ fontSize: 12, color: '#e11d48', fontWeight: 700 }}>- {formatWon(totalFee)}</span>
-                <span style={{ fontSize: 11, color: '#94a3b8' }}>WOO 입점 수수료 ({(FEE_RATE * 100).toFixed(0)}%)</span>
+                <span style={{ fontSize: 11, color: '#757575' }}>WOO 입점 수수료 ({(FEE_RATE * 100).toFixed(0)}%)</span>
               </div>
             </div>
             <div style={{ background: totalProfit >= 0 ? '#eff6ff' : '#fff1f2', border: '1px solid #94a3b8', borderRadius: 16, padding: 20 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                 <span style={{ fontSize: 14, color: '#000000', fontWeight: 700 }}>순수익 (공헌이익)</span>
-                <button onClick={openCostModal}
-                  style={{ border: '1px solid #bfdbfe', background: '#fff', color: '#2563eb', cursor: 'pointer', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 6 }}>
-                  🔍 원가 확인
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <button onClick={openCostModal}
+                    style={{ border: '1px solid #bfdbfe', background: '#fff', color: '#2563eb', cursor: 'pointer', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 6 }}>
+                    🔍 원가 확인
+                  </button>
+                  <button onClick={() => setYear(y => y - 1)} style={yearBtnStyle}>◀</button>
+                  <span style={{ fontWeight: 700, fontSize: 13, minWidth: 48, textAlign: 'center' }}>{year}년</span>
+                  <button onClick={() => setYear(y => y + 1)} style={yearBtnStyle}>▶</button>
+                </div>
               </div>
               <div style={{ fontSize: 26, fontWeight: 800, color: totalProfit >= 0 ? '#059669' : '#e11d48', marginBottom: 4 }}>
                 {formatWon(totalProfit)}
@@ -883,8 +864,8 @@ ${bulletLines || '(참고할 만한 규칙 기반 인사이트 없음)'}
                 )}
                 <YoyBadge pct={yoyProfitPct} />
               </div>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 4 }}>작년 {formatWon(prevYearTotalProfit)}</div>
-              <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 6 }}>
+              <div style={{ fontSize: 12, color: '#757575', marginBottom: 4 }}>작년 {formatWon(prevYearTotalProfit)}</div>
+              <div style={{ fontSize: 11, color: '#757575', marginBottom: 6 }}>
                 원가 {costPct}% · 택배비 {shippingPct}% · 광고비 {adPct}% · 수수료 {feePct}%
               </div>
               {marginRateExAd !== null && (
@@ -905,7 +886,7 @@ ${bulletLines || '(참고할 만한 규칙 기반 인사이트 없음)'}
           <div style={{ background: '#fff', border: '1px solid #94a3b8', borderRadius: 16, padding: 20, marginBottom: 24 }}>
             <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginBottom: 16 }}>
               <button onClick={() => shiftViewMonth(-1)} style={monthNavBtnStyle}>◀</button>
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#94a3b8' }}>{year}년 {viewMonthIdx + 1}월</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#757575' }}>{year}년 {viewMonthIdx + 1}월</span>
               <button onClick={() => shiftViewMonth(1)} style={monthNavBtnStyle}>▶</button>
             </div>
 
@@ -916,7 +897,7 @@ ${bulletLines || '(참고할 만한 규칙 기반 인사이트 없음)'}
                   {formatWon(mGross)}
                   <YoyBadge pct={mYoyGrossPct} />
                 </div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>작년 {formatWon(prevMGross)}</div>
+                <div style={{ fontSize: 11, color: '#757575', marginTop: 4 }}>작년 {formatWon(prevMGross)}</div>
               </div>
               <div style={{ background: '#f5f3ff', borderRadius: 12, padding: 16 }}>
                 <div style={{ fontSize: 14, color: '#000000', fontWeight: 700, marginBottom: 6 }}>순매출액</div>
@@ -924,10 +905,10 @@ ${bulletLines || '(참고할 만한 규칙 기반 인사이트 없음)'}
                   {formatWon(mNet)}
                   <YoyBadge pct={mYoyNetPct} />
                 </div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>작년 {formatWon(prevMNet)}</div>
+                <div style={{ fontSize: 11, color: '#757575', marginTop: 4 }}>작년 {formatWon(prevMNet)}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
                   <span style={{ fontSize: 11, color: '#e11d48', fontWeight: 700 }}>- {formatWon(mFee)}</span>
-                  <span style={{ fontSize: 10, color: '#94a3b8' }}>수수료 ({(FEE_RATE * 100).toFixed(0)}%)</span>
+                  <span style={{ fontSize: 10, color: '#757575' }}>수수료 ({(FEE_RATE * 100).toFixed(0)}%)</span>
                 </div>
               </div>
               <div style={{ background: mProfit >= 0 ? '#eff6ff' : '#fff1f2', borderRadius: 12, padding: 16 }}>
@@ -936,7 +917,7 @@ ${bulletLines || '(참고할 만한 규칙 기반 인사이트 없음)'}
                   {formatWon(mProfit)}
                   <YoyBadge pct={mYoyProfitPct} />
                 </div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>작년 {formatWon(prevMProfit)}</div>
+                <div style={{ fontSize: 11, color: '#757575', marginTop: 4 }}>작년 {formatWon(prevMProfit)}</div>
               </div>
             </div>
 
@@ -944,11 +925,11 @@ ${bulletLines || '(참고할 만한 규칙 기반 인사이트 없음)'}
               <div style={{ fontWeight: 700, fontSize: 15 }}>{chartYear}년 월별 매출</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <button onClick={() => shiftChartYear(-1)} style={monthNavBtnStyle}>◀</button>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#94a3b8' }}>{chartYear}년</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#757575' }}>{chartYear}년</span>
                 <button onClick={() => shiftChartYear(1)} style={monthNavBtnStyle}>▶</button>
               </div>
             </div>
-            <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 16 }}>
+            <div style={{ fontSize: 12, color: '#757575', marginBottom: 16 }}>
               매출액 {chartHasPrevYearData ? `· ${chartYear - 1}년 매출(비교)` : ''}
             </div>
             {chartLoading ? <div className="loading">로딩 중...</div> : (!chartHasData && !chartHasPrevYearData) ? (
@@ -970,7 +951,7 @@ ${bulletLines || '(참고할 만한 규칙 기반 인사이트 없음)'}
               </ResponsiveContainer>
 
               <div style={{ fontWeight: 700, fontSize: 15, marginTop: 24, marginBottom: 4 }}>{chartYear}년 월별 판매수량</div>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 16 }}>
+              <div style={{ fontSize: 12, color: '#757575', marginBottom: 16 }}>
                 순수 판매 건수 {chartHasPrevYearData ? `· ${chartYear - 1}년 판매건수(비교)` : ''}
               </div>
               <ResponsiveContainer width="100%" height={200}>
@@ -1020,7 +1001,7 @@ ${bulletLines || '(참고할 만한 규칙 기반 인사이트 없음)'}
                   </button>
                 </div>
               </div>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 16 }}>
+              <div style={{ fontSize: 12, color: '#757575', marginBottom: 16 }}>
                 주문 건수 기준 ({bestYearFilter === '전체' ? '전체 연도' : `${bestYearFilter}년`}){showByOption ? ' · 옵션별' : ' · 스타일넘버 기준 통합'} · 스크롤로 전체 확인
               </div>
               {(() => {
@@ -1048,7 +1029,7 @@ ${bulletLines || '(참고할 만한 규칙 기반 인사이트 없음)'}
                       <thead>
                         <tr style={{ background: '#f8fafc' }}>
                           {(showByOption ? ['순위', '상품명', '스타일넘버', '옵션', '건수', '매출', '순매출', '순수익'] : ['순위', '상품명', '스타일넘버', '건수', '매출', '순매출', '순수익']).map(h => (
-                            <th key={h} style={{ padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid #94a3b8', fontSize: 11, color: '#94a3b8', fontWeight: 700, position: 'sticky', top: 0, background: '#f8fafc' }}>{h}</th>
+                            <th key={h} style={{ padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid #94a3b8', fontSize: 11, color: '#757575', fontWeight: 700, position: 'sticky', top: 0, background: '#f8fafc' }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -1083,7 +1064,7 @@ ${bulletLines || '(참고할 만한 규칙 기반 인사이트 없음)'}
                   ))}
                 </select>
               </div>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 16 }}>{bestYearFilter === '전체' ? '전체 연도' : `${bestYearFilter}년`} 기준, 재고 카테고리와 매칭</div>
+              <div style={{ fontSize: 12, color: '#757575', marginBottom: 16 }}>{bestYearFilter === '전체' ? '전체 연도' : `${bestYearFilter}년`} 기준, 재고 카테고리와 매칭</div>
               {categorySales.length === 0 ? (
                 <div className="chart-empty" style={{ height: 120 }}>정산내역을 먼저 업로드해주세요</div>
               ) : (
@@ -1123,7 +1104,7 @@ ${bulletLines || '(참고할 만한 규칙 기반 인사이트 없음)'}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <div style={{ fontWeight: 700, fontSize: 16 }}>WOO 일별 주문표</div>
               <button onClick={() => setShowOrderModal(false)}
-                style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 20, color: '#94a3b8', lineHeight: 1 }}>×</button>
+                style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 20, color: '#757575', lineHeight: 1 }}>×</button>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, marginBottom: 16 }}>
@@ -1142,7 +1123,7 @@ ${bulletLines || '(참고할 만한 규칙 기반 인사이트 없음)'}
                   <thead>
                     <tr style={{ background: '#f8fafc' }}>
                       {['날짜', '시즌', '상품명', '스타일넘버', '옵션', '판매가', '할인금액', '판매금액', '원가', '정산액(수수료 제외)', '순수익'].map(h => (
-                        <th key={h} style={{ padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid #94a3b8', color: '#94a3b8', fontWeight: 700 }}>{h}</th>
+                        <th key={h} style={{ padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid #94a3b8', color: '#757575', fontWeight: 700 }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -1185,9 +1166,9 @@ ${bulletLines || '(참고할 만한 규칙 기반 인사이트 없음)'}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
               <div style={{ fontWeight: 700, fontSize: 16 }}>아이템별 원가 확인</div>
               <button onClick={() => setShowCostModal(false)}
-                style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 20, color: '#94a3b8', lineHeight: 1 }}>×</button>
+                style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 20, color: '#757575', lineHeight: 1 }}>×</button>
             </div>
-            <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 16 }}>
+            <div style={{ fontSize: 12, color: '#757575', marginBottom: 16 }}>
               {year}년 전체 · 매칭 안 된 상품은 주황색으로 표시돼요 (재고 상품명·옵션 표기를 확인해보세요)
             </div>
             {costLoading ? (
@@ -1199,7 +1180,7 @@ ${bulletLines || '(참고할 만한 규칙 기반 인사이트 없음)'}
                 <thead>
                   <tr style={{ background: '#f8fafc' }}>
                     {['상품명(스타일넘버)', '건수', '매칭 원가', '매칭 상태'].map(h => (
-                      <th key={h} style={{ padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid #94a3b8', color: '#94a3b8', fontWeight: 700 }}>{h}</th>
+                      <th key={h} style={{ padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid #94a3b8', color: '#757575', fontWeight: 700 }}>{h}</th>
                     ))}
                   </tr>
                 </thead>

@@ -702,15 +702,18 @@ export default function Cafe24Page() {
                 </div>
                 {insightsExpanded && (
                   <>
-                    <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4, marginBottom: 18 }}>
-                      {year}년 {viewMonthIdx + 1}월 기준 데이터를 바탕으로 자동 생성된 참고용 피드백이에요
+                    <div style={{ fontSize: 12, color: '#757575', marginTop: 4, marginBottom: 4 }}>
+                      {year}년 {viewMonthIdx + 1}월 기준 데이터를 바탕으로 자동 생성된 참고용 피드백이에요.
+                    </div>
+                    <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 18 }}>
+                      ANTHROPIC_API_KEY 설정 필요 &gt; gemini, claude
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 16 }}>
                       {groups.map(g => (
                         <div key={g.title} style={{ background: '#fff', borderRadius: 12, padding: 16 }}>
                           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10, color: g.color }}>{g.title}</div>
                           {g.items.length === 0 ? (
-                            <div style={{ fontSize: 12, color: '#94a3b8' }}>아직 참고할 만한 데이터가 부족해요.</div>
+                            <div style={{ fontSize: 12, color: '#757575' }}>아직 참고할 만한 데이터가 부족해요.</div>
                           ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                               {g.items.map((text, i) => (
@@ -724,50 +727,11 @@ export default function Cafe24Page() {
                         </div>
                       ))}
                     </div>
-
-                    <div style={{ borderTop: '1px solid #f1f5f9', margin: '12px 0' }} />
-
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                      <div style={{ fontWeight: 700, fontSize: 13, color: '#4f46e5' }}>🤖 Claude AI 분석</div>
-                      <button
-                        onClick={runClaudeAI}
-                        disabled={claudeLoading}
-                        style={{
-                          border: '1px solid #4f46e5',
-                          background: claudeLoading ? '#f8fafc' : '#4f46e5',
-                          color: claudeLoading ? '#94a3b8' : '#fff',
-                          cursor: claudeLoading ? 'not-allowed' : 'pointer',
-                          fontSize: 11,
-                          fontWeight: 700,
-                          padding: '5px 12px',
-                          borderRadius: 8,
-                        }}
-                      >
-                        {claudeLoading ? '분석 중...' : 'Claude 분석 보기'}
-                      </button>
-                    </div>
-                    <div style={{ background: '#fff', borderRadius: 12, padding: 16 }}>
-                      {!claudeLoading && !claudeResult && (
-                        <div style={{ fontSize: 12, color: '#94a3b8' }}>버튼을 누르면 Claude가 실제로 데이터를 분석합니다.</div>
-                      )}
-                      {claudeLoading && (
-                        <div style={{ fontSize: 12, color: '#94a3b8' }}>Claude가 데이터를 분석하고 있어요...</div>
-                      )}
-                      {!claudeLoading && claudeResult && (
-                        <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.7, fontSize: 13, color: '#374151' }}>{claudeResult}</div>
-                      )}
-                    </div>
                   </>
                 )}
               </div>
             )
           })()}
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-            <button onClick={() => setYear(y => y - 1)} style={yearBtnStyle}>◀</button>
-            <span style={{ fontSize: 15, fontWeight: 700, color: '#94a3b8' }}>{year}년</span>
-            <button onClick={() => setYear(y => y + 1)} style={yearBtnStyle}>▶</button>
-          </div>
 
           {/* 연간 KPI */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16, marginBottom: 20 }}>
@@ -791,12 +755,12 @@ export default function Cafe24Page() {
                   </span>
                 )}
               </div>
-              <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>전년도 매출액 {formatWon(totalPrevYearGross)}</div>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>
+              <div style={{ fontSize: 11, color: '#757575', marginTop: 2 }}>전년도 매출액 {formatWon(totalPrevYearGross)}</div>
+              <div style={{ fontSize: 12, color: '#757575', marginTop: 4 }}>
                 결제금액 합계 (할인 반영 후)
                 {hasData && (
                   <span style={{ marginLeft: 6, color: '#64748b', fontWeight: 700 }}>
-                    {totalNetQty}건 <span style={{ fontWeight: 500, color: '#94a3b8' }}>(판매{totalQtySale}/환불{totalQtyRefund})</span>
+                    {totalNetQty}건 <span style={{ fontWeight: 500, color: '#757575' }}>(판매{totalQtySale}/환불{totalQtyRefund})</span>
                   </span>
                 )}
               </div>
@@ -817,10 +781,10 @@ export default function Cafe24Page() {
                   </span>
                 )}
               </div>
-              <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2, marginBottom: 4 }}>전년도 순매출액 {formatWon(totalPrevYearNet)}</div>
+              <div style={{ fontSize: 11, color: '#757575', marginTop: 2, marginBottom: 4 }}>전년도 순매출액 {formatWon(totalPrevYearNet)}</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
                 <span style={{ fontSize: 12, color: '#e11d48', fontWeight: 700 }}>- {formatWon(totalFee)}</span>
-                <span style={{ fontSize: 11, color: '#94a3b8' }}>PG 수수료 ({(FEE_RATE * 100).toFixed(1)}%)</span>
+                <span style={{ fontSize: 11, color: '#757575' }}>PG 수수료 ({(FEE_RATE * 100).toFixed(1)}%)</span>
               </div>
             </div>
             <div style={{ background: totalProfit >= 0 ? '#eff6ff' : '#fff1f2', border: '1px solid #94a3b8', borderRadius: 16, padding: 20 }}>
@@ -831,6 +795,9 @@ export default function Cafe24Page() {
                     style={{ border: '1px solid #bfdbfe', background: '#fff', color: '#2563eb', cursor: 'pointer', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 6 }}>
                     🔍 원가 확인
                   </button>
+                  <button onClick={() => setYear(y => y - 1)} style={yearBtnStyle}>◀</button>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#757575' }}>{year}년</span>
+                  <button onClick={() => setYear(y => y + 1)} style={yearBtnStyle}>▶</button>
                 </div>
               </div>
               <div style={{ fontSize: 26, fontWeight: 800, color: totalProfit >= 0 ? '#059669' : '#e11d48', marginBottom: 4 }}>
@@ -839,9 +806,9 @@ export default function Cafe24Page() {
                   <span style={{ fontSize: 13, fontWeight: 700, marginLeft: 6 }}>({marginRate}%)</span>
                 )}
               </div>
-              <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 4 }}>전년도 순수익 {formatWon(totalPrevYearProfit)}</div>
-              <div style={{ fontSize: 11, color: '#94a3b8' }}>원가 {formatWon(totalCost)} · 택배비 {formatWon(totalShipping)}</div>
-              <div style={{ fontSize: 9, color: '#94a3b8', marginTop: 4 }}>
+              <div style={{ fontSize: 11, color: '#757575', marginBottom: 4 }}>전년도 순수익 {formatWon(totalPrevYearProfit)}</div>
+              <div style={{ fontSize: 11, color: '#757575' }}>원가 {formatWon(totalCost)} · 택배비 {formatWon(totalShipping)}</div>
+              <div style={{ fontSize: 9, color: '#757575', marginTop: 4 }}>
                 원가 {totalGross > 0 ? Math.round((totalCost / totalGross) * 1000) / 10 : 0}% · 택배비 {totalGross > 0 ? Math.round((totalShipping / totalGross) * 1000) / 10 : 0}% · 광고비 0% · 수수료 {totalGross > 0 ? Math.round((totalFee / totalGross) * 1000) / 10 : 0}%
               </div>
               <div style={{ fontSize: 9, color: '#e11d48', marginTop: 2 }}>공헌이익률 45% 미만 위험 · 60% 미만 주의 · 65%↑ 안정권 (광고료 제외)</div>
@@ -858,7 +825,7 @@ export default function Cafe24Page() {
           <div style={{ background: '#fff', border: '1px solid #94a3b8', borderRadius: 16, padding: 20, marginBottom: 24 }}>
             <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginBottom: 16 }}>
               <button onClick={() => shiftViewMonth(-1)} style={monthNavBtnStyle}>◀</button>
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#94a3b8' }}>{year}년 {viewMonthIdx + 1}월</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#757575' }}>{year}년 {viewMonthIdx + 1}월</span>
               <button onClick={() => shiftViewMonth(1)} style={monthNavBtnStyle}>▶</button>
             </div>
 
@@ -873,7 +840,7 @@ export default function Cafe24Page() {
                     </span>
                   )}
                 </div>
-                <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4 }}>전년동월 매출액 {formatWon(mPrevYearGross)}</div>
+                <div style={{ fontSize: 10, color: '#757575', marginTop: 4 }}>전년동월 매출액 {formatWon(mPrevYearGross)}</div>
               </div>
               <div style={{ background: '#f0fdf4', borderRadius: 12, padding: 16 }}>
                 <div style={{ fontSize: 14, color: '#000000', fontWeight: 700, marginBottom: 6 }}>순매출액</div>
@@ -885,10 +852,10 @@ export default function Cafe24Page() {
                     </span>
                   )}
                 </div>
-                <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>전년동월 순매출액 {formatWon(mPrevYearNet)}</div>
+                <div style={{ fontSize: 10, color: '#757575', marginTop: 2 }}>전년동월 순매출액 {formatWon(mPrevYearNet)}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
                   <span style={{ fontSize: 11, color: '#e11d48', fontWeight: 700 }}>- {formatWon(mFee)}</span>
-                  <span style={{ fontSize: 10, color: '#94a3b8' }}>PG 수수료 ({(FEE_RATE * 100).toFixed(1)}%)</span>
+                  <span style={{ fontSize: 10, color: '#757575' }}>PG 수수료 ({(FEE_RATE * 100).toFixed(1)}%)</span>
                 </div>
               </div>
               <div style={{ background: mProfit >= 0 ? '#eff6ff' : '#fff1f2', borderRadius: 12, padding: 16 }}>
@@ -899,7 +866,7 @@ export default function Cafe24Page() {
                     <span style={{ fontSize: 13, fontWeight: 700, marginLeft: 6 }}>({mMarginRate}%)</span>
                   )}
                 </div>
-                <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>전년동월 순수익 {formatWon(mPrevYearProfit)}</div>
+                <div style={{ fontSize: 10, color: '#757575', marginTop: 2 }}>전년동월 순수익 {formatWon(mPrevYearProfit)}</div>
               </div>
             </div>
 
@@ -907,11 +874,11 @@ export default function Cafe24Page() {
               <div style={{ fontWeight: 700, fontSize: 15 }}>{chartYear}년 월별 매출</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <button onClick={() => shiftChartYear(-1)} style={monthNavBtnStyle}>◀</button>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#94a3b8' }}>{chartYear}년</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#757575' }}>{chartYear}년</span>
                 <button onClick={() => shiftChartYear(1)} style={monthNavBtnStyle}>▶</button>
               </div>
             </div>
-            <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 16 }}>
+            <div style={{ fontSize: 12, color: '#757575', marginBottom: 16 }}>
               매출액 {chartHasPrevYearData ? `· ${chartYear - 1}년 매출(비교)` : ''}
             </div>
             {chartLoading ? <div className="loading">로딩 중...</div> : !chartHasData ? (
@@ -933,7 +900,7 @@ export default function Cafe24Page() {
               </ResponsiveContainer>
 
               <div style={{ fontWeight: 700, fontSize: 15, marginTop: 24, marginBottom: 4 }}>{chartYear}년 월별 판매수량</div>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 16 }}>
+              <div style={{ fontSize: 12, color: '#757575', marginBottom: 16 }}>
                 순수 판매 건수 {chartHasPrevYearData ? `· ${chartYear - 1}년 판매건수(비교)` : ''}
               </div>
               <ResponsiveContainer width="100%" height={200}>
@@ -983,7 +950,7 @@ export default function Cafe24Page() {
                   </button>
                 </div>
               </div>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 16 }}>
+              <div style={{ fontSize: 12, color: '#757575', marginBottom: 16 }}>
                 주문 건수 기준 ({rankYearFilter === '전체' ? '전체 기간' : `${rankYearFilter}년`}){showByOption ? ' · 옵션별' : ' · 스타일넘버 기준 통합'} · 스크롤로 전체 확인
               </div>
               {rankLoading ? <div className="loading">로딩 중...</div> : (() => {
@@ -1011,7 +978,7 @@ export default function Cafe24Page() {
                       <thead>
                         <tr style={{ background: '#f8fafc' }}>
                           {(showByOption ? ['순위', '상품명', '스타일넘버', '옵션', '건수', '매출', '순매출', '순수익'] : ['순위', '상품명', '스타일넘버', '건수', '매출', '순매출', '순수익']).map(h => (
-                            <th key={h} style={{ padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid #94a3b8', fontSize: 11, color: '#94a3b8', fontWeight: 700, position: 'sticky', top: 0, background: '#f8fafc' }}>{h}</th>
+                            <th key={h} style={{ padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid #94a3b8', fontSize: 11, color: '#757575', fontWeight: 700, position: 'sticky', top: 0, background: '#f8fafc' }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -1050,7 +1017,7 @@ export default function Cafe24Page() {
                   ))}
                 </select>
               </div>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 16 }}>
+              <div style={{ fontSize: 12, color: '#757575', marginBottom: 16 }}>
                 {rankYearFilter === '전체' ? '전체 기간' : `${rankYearFilter}년`} 기준, 재고 카테고리와 매칭
               </div>
               {rankLoading ? <div className="loading">로딩 중...</div> : categorySales.length === 0 ? (
@@ -1092,7 +1059,7 @@ export default function Cafe24Page() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <div style={{ fontWeight: 700, fontSize: 16 }}>자사몰 일별 주문표</div>
               <button onClick={() => setShowOrderModal(false)}
-                style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 20, color: '#94a3b8', lineHeight: 1 }}>×</button>
+                style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 20, color: '#757575', lineHeight: 1 }}>×</button>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, marginBottom: 16 }}>
@@ -1111,7 +1078,7 @@ export default function Cafe24Page() {
                   <thead>
                     <tr style={{ background: '#f8fafc' }}>
                       {['날짜', '시즌', '상품명', '스타일넘버', '옵션', '판매가', '할인금액', '판매금액', '원가', '정산액(수수료 제외)', '순수익'].map(h => (
-                        <th key={h} style={{ padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid #94a3b8', color: '#94a3b8', fontWeight: 700 }}>{h}</th>
+                        <th key={h} style={{ padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid #94a3b8', color: '#757575', fontWeight: 700 }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -1153,9 +1120,9 @@ export default function Cafe24Page() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
               <div style={{ fontWeight: 700, fontSize: 16 }}>아이템별 원가 확인</div>
               <button onClick={() => setShowCostModal(false)}
-                style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 20, color: '#94a3b8', lineHeight: 1 }}>×</button>
+                style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 20, color: '#757575', lineHeight: 1 }}>×</button>
             </div>
-            <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 16 }}>
+            <div style={{ fontSize: 12, color: '#757575', marginBottom: 16 }}>
               {year}년 전체 · 매칭 안 된 상품은 주황색으로 표시돼요 (재고 상품명·옵션 표기를 확인해보세요)
             </div>
             {costLoading ? (
@@ -1167,7 +1134,7 @@ export default function Cafe24Page() {
                 <thead>
                   <tr style={{ background: '#f8fafc' }}>
                     {['상품명(스타일넘버)', '건수', '매칭 원가', '매칭 상태'].map(h => (
-                      <th key={h} style={{ padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid #94a3b8', color: '#94a3b8', fontWeight: 700 }}>{h}</th>
+                      <th key={h} style={{ padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid #94a3b8', color: '#757575', fontWeight: 700 }}>{h}</th>
                     ))}
                   </tr>
                 </thead>

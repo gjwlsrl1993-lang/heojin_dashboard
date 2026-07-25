@@ -212,7 +212,7 @@ export default function DiscountSettingsPage() {
 
       {/* 플랫폼 버튼 */}
       <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 6 }}>플랫폼</div>
+        <div style={{ fontSize: 11, color: '#757575', fontWeight: 700, marginBottom: 6 }}>플랫폼</div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {PLATFORMS.map(p => (
             <button key={p} onClick={() => setPlatform(p)}
@@ -222,7 +222,7 @@ export default function DiscountSettingsPage() {
                 background: platform === p ? '#eef2ff' : '#fff',
                 color: platform === p ? '#4f46e5' : '#475569',
               }}>
-              {p} <span style={{ fontWeight: 500, fontSize: 11, color: '#94a3b8' }}>({(PLATFORM_FEE_RATE[p] * 100).toFixed(1)}%)</span>
+              {p} <span style={{ fontWeight: 500, fontSize: 11, color: '#757575' }}>({(PLATFORM_FEE_RATE[p] * 100).toFixed(1)}%)</span>
             </button>
           ))}
         </div>
@@ -231,7 +231,7 @@ export default function DiscountSettingsPage() {
       {/* 시즌 / 카테고리 드롭다운 */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
         <div>
-          <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 6 }}>시즌</div>
+          <div style={{ fontSize: 11, color: '#757575', fontWeight: 700, marginBottom: 6 }}>시즌</div>
           <select value={season} onChange={e => setSeason(e.target.value)}
             style={{ padding: '8px 12px', border: '1px solid #94a3b8', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', background: '#fff' }}>
             <option value="전체">전체 시즌</option>
@@ -239,7 +239,7 @@ export default function DiscountSettingsPage() {
           </select>
         </div>
         <div>
-          <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 6 }}>카테고리</div>
+          <div style={{ fontSize: 11, color: '#757575', fontWeight: 700, marginBottom: 6 }}>카테고리</div>
           <select value={category} onChange={e => setCategory(e.target.value)}
             style={{ padding: '8px 12px', border: '1px solid #94a3b8', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', background: '#fff' }}>
             <option value="전체">전체 카테고리</option>
@@ -255,11 +255,11 @@ export default function DiscountSettingsPage() {
       }}>
         <div style={{ fontSize: 11, color: '#64748b', fontWeight: 700, marginRight: 4 }}>
           일괄입력<br />
-          <span style={{ fontWeight: 400, color: '#94a3b8' }}>({filtered.length}개 상품)</span>
+          <span style={{ fontWeight: 400, color: '#757575' }}>({filtered.length}개 상품)</span>
         </div>
 
         <div>
-          <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 6 }}>할인(%)</div>
+          <div style={{ fontSize: 11, color: '#757575', fontWeight: 700, marginBottom: 6 }}>할인(%)</div>
           <div style={{ display: 'flex', gap: 6 }}>
             <input type="number" min={0} max={100} value={bulkDiscount} placeholder="0"
               onChange={e => setBulkDiscount(e.target.value)}
@@ -273,7 +273,7 @@ export default function DiscountSettingsPage() {
 
         {showCoupon && !splitCoupon && (
           <div>
-            <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 6 }}>쿠폰(%)</div>
+            <div style={{ fontSize: 11, color: '#757575', fontWeight: 700, marginBottom: 6 }}>쿠폰(%)</div>
             <div style={{ display: 'flex', gap: 6 }}>
               <input type="number" min={0} max={100} value={bulkCoupon} placeholder="0"
                 onChange={e => setBulkCoupon(e.target.value)}
@@ -289,7 +289,7 @@ export default function DiscountSettingsPage() {
         {showCoupon && splitCoupon && (
           <>
             <div>
-              <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 6 }}>{PLATFORM_COUPON_LABEL[platform]}(%)</div>
+              <div style={{ fontSize: 11, color: '#757575', fontWeight: 700, marginBottom: 6 }}>{PLATFORM_COUPON_LABEL[platform]}(%)</div>
               <div style={{ display: 'flex', gap: 6 }}>
                 <input type="number" min={0} max={100} value={bulkPlatformCoupon} placeholder="0"
                   onChange={e => setBulkPlatformCoupon(e.target.value)}
@@ -301,7 +301,7 @@ export default function DiscountSettingsPage() {
               </div>
             </div>
             <div>
-              <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 6 }}>브랜드쿠폰(%)</div>
+              <div style={{ fontSize: 11, color: '#757575', fontWeight: 700, marginBottom: 6 }}>브랜드쿠폰(%)</div>
               <div style={{ display: 'flex', gap: 6 }}>
                 <input type="number" min={0} max={100} value={bulkBrandCoupon} placeholder="0"
                   onChange={e => setBulkBrandCoupon(e.target.value)}
@@ -332,7 +332,7 @@ export default function DiscountSettingsPage() {
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={headers.length} style={{ textAlign: 'center', padding: 48, color: '#94a3b8' }}>해당 시즌에 등록된 상품이 없습니다.</td></tr>
+                <tr><td colSpan={headers.length} style={{ textAlign: 'center', padding: 48, color: '#757575' }}>해당 시즌에 등록된 상품이 없습니다.</td></tr>
               ) : filtered.map(it => {
                 const discountPct = discountRates[rateKey(it.key)] ?? 0
                 const discountPrice = Math.round(it.sell_price * (1 - discountPct / 100))
@@ -382,7 +382,7 @@ export default function DiscountSettingsPage() {
                       <input type="number" min={0} max={100} value={discountPct || ''} placeholder="0"
                         onChange={e => setRate(setDiscountRates, rateKey(it.key), e.target.value)}
                         style={{ width: 60, padding: '5px 8px', border: '1px solid #94a3b8', borderRadius: 6, textAlign: 'center', fontSize: 13, fontFamily: 'inherit' }} />
-                      <span style={{ marginLeft: 2, fontSize: 12, color: '#94a3b8' }}>%</span>
+                      <span style={{ marginLeft: 2, fontSize: 12, color: '#757575' }}>%</span>
                     </td>
                     <td style={{ padding: '8px', textAlign: 'center', fontWeight: 700, color: '#d97706' }}>{formatWon(discountPrice)}</td>
 
@@ -392,13 +392,13 @@ export default function DiscountSettingsPage() {
                           <input type="number" min={0} max={100} value={platformCouponPct || ''} placeholder="0"
                             onChange={e => setRate(setPlatformCouponRates, rateKey(it.key), e.target.value)}
                             style={{ width: 60, padding: '5px 8px', border: '1px solid #94a3b8', borderRadius: 6, textAlign: 'center', fontSize: 13, fontFamily: 'inherit' }} />
-                          <span style={{ marginLeft: 2, fontSize: 12, color: '#94a3b8' }}>%</span>
+                          <span style={{ marginLeft: 2, fontSize: 12, color: '#757575' }}>%</span>
                         </td>
                         <td style={{ padding: '8px', textAlign: 'center' }}>
                           <input type="number" min={0} max={100} value={brandCouponPct || ''} placeholder="0"
                             onChange={e => setRate(setBrandCouponRates, rateKey(it.key), e.target.value)}
                             style={{ width: 60, padding: '5px 8px', border: '1px solid #94a3b8', borderRadius: 6, textAlign: 'center', fontSize: 13, fontFamily: 'inherit' }} />
-                          <span style={{ marginLeft: 2, fontSize: 12, color: '#94a3b8' }}>%</span>
+                          <span style={{ marginLeft: 2, fontSize: 12, color: '#757575' }}>%</span>
                         </td>
                       </>
                     ) : (
@@ -406,7 +406,7 @@ export default function DiscountSettingsPage() {
                         <input type="number" min={0} max={100} value={couponPct || ''} placeholder="0"
                           onChange={e => setRate(setCouponRates, rateKey(it.key), e.target.value)}
                           style={{ width: 60, padding: '5px 8px', border: '1px solid #94a3b8', borderRadius: 6, textAlign: 'center', fontSize: 13, fontFamily: 'inherit' }} />
-                        <span style={{ marginLeft: 2, fontSize: 12, color: '#94a3b8' }}>%</span>
+                        <span style={{ marginLeft: 2, fontSize: 12, color: '#757575' }}>%</span>
                       </td>
                     )}
 
@@ -427,7 +427,7 @@ export default function DiscountSettingsPage() {
         </div>
       )}
 
-      <div style={{ marginTop: 16, fontSize: 12, color: '#94a3b8' }}>
+      <div style={{ marginTop: 16, fontSize: 12, color: '#757575' }}>
         · 옵션(사이즈)은 가격이 동일해서 상품명 기준으로 한 줄로 합쳤어요 · 할인은 판매가에 먼저 적용되고, 쿠폰은 할인적용가에 추가로 적용돼요
         · 무신사/REKET은 쿠폰이 "{PLATFORM_COUPON_LABEL['무신사']}/{PLATFORM_COUPON_LABEL['REKET']}"(플랫폼 부담)과 "브랜드쿠폰"(셀러 부담)으로 나뉘고, <b>정산액 계산에는 플랫폼 부담 쿠폰이 반영되지 않아요</b>
         · 자사몰/무신사/REKET은 할인 10%마다 수수료가 1%p씩 낮아져요(WOO·클라만 제외) · 쿠폰/할인(%)은 화면에서만 계산되는 시뮬레이션 값이에요(저장되지 않음) · 택배비는 현재 기준({formatWon(CURRENT_SHIPPING_FEE)}) 고정 · 상단 "일괄입력"으로 현재 필터에 걸린 상품 전체에 같은 값을 한번에 넣을 수 있어요

@@ -184,12 +184,17 @@ async function loadAllChannelsForYear(targetYear: number): Promise<ChannelYearDa
   return results
 }
 
-// 전 채널 월별 판매수량 — 무신사(qty 컬럼 보유)는 qty 합산, 나머지 채널(자사몰/WOO/REKET/클라만)은
-// 각 채널 페이지와 동일하게 정산 라인 1건 = 판매 1건으로 집계. 매출이 0 이하인 행(환불·취소)은 제외.
+// 전 채널 월별 판매수량 — 환불행은 그냥 제외하는 게 아니라 원래 판매(+1)를 상쇄하도록 -수량으로 반영해서
+// 판매 후 환불된 건은 순감산되어 0이 되도록 함(items/아이템 페이지, 재고 수동제어판과 동일한 원칙).
+// 무신사는 qty 컬럼 + order_type 텍스트로 환불 판정(musinsa-page.tsx와 동일), 나머지 채널(자사몰/WOO/REKET/클라만)은
+// 정산 라인 1건 = 판매 1건, 매출 금액 부호로 환불 판정.
 async function loadMonthlyQtyForYear(targetYear: number): Promise<number[]> {
   const qty = new Array(12).fill(0)
   await Promise.all(CHANNELS.map(async (c) => {
-    const cols = c.shipping === 'qty-tiered' ? `${c.dateCol}, ${c.grossCol}, qty` : `${c.dateCol}, ${c.grossCol}`
+    const isMusinsa = c.name === '무신사'
+    const cols = c.shipping === 'qty-tiered'
+      ? `${c.dateCol}, ${c.grossCol}, qty${isMusinsa ? ', order_type' : ''}`
+      : `${c.dateCol}, ${c.grossCol}`
     const base = supabase.from(c.table).select(cols).eq('channel', c.name)
     const { data } = c.monthOnly
       ? await base.gte(c.dateCol, `${targetYear}-01`).lte(c.dateCol, `${targetYear}-12`)
@@ -198,9 +203,16 @@ async function loadMonthlyQtyForYear(targetYear: number): Promise<number[]> {
       const raw = row[c.dateCol]
       const m = c.monthOnly ? (parseInt(String(raw).slice(5, 7), 10) - 1) : new Date(raw).getMonth()
       if (m < 0 || m >= 12) return
-      const g = row[c.grossCol] || 0
-      if (g <= 0) return
-      qty[m] += c.shipping === 'qty-tiered' ? (row.qty || 0) : 1
+      if (isMusinsa) {
+        // "일일정산확인" 파일엔 판매+환불이 한 행으로 이미 넷팅되어 qty=0으로 찍히는 order_type="판매/환불"이 있어서,
+        // 단독 환불(반품/환불)행과 구분해야 이중 차감을 피할 수 있음
+        const orderType = String(row.order_type || '')
+        const isPureRefund = orderType !== '' && !orderType.includes('판매') && (orderType.includes('환불') || orderType.includes('반품'))
+        qty[m] += isPureRefund ? -(row.qty || 1) : (row.qty || 0)
+      } else {
+        const g = row[c.grossCol] || 0
+        qty[m] += g >= 0 ? 1 : -1
+      }
     })
   }))
   return qty
@@ -1110,7 +1122,7 @@ export default function DashboardPage() {
                 </div>
                 {insightsExpanded && (
                   <>
-                    <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4, marginBottom: 18 }}>
+                    <div style={{ fontSize: 12, color: '#757575', marginTop: 4, marginBottom: 18 }}>
                       {year}년 채널 데이터를 바탕으로 자동 생성된 참고용 피드백이에요
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 16 }}>
@@ -1118,7 +1130,7 @@ export default function DashboardPage() {
                         <div key={g.title} style={{ background: '#fff', borderRadius: 12, padding: 16 }}>
                           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10, color: g.color }}>{g.title}</div>
                           {g.items.length === 0 ? (
-                            <div style={{ fontSize: 12, color: '#94a3b8' }}>아직 참고할 만한 데이터가 부족해요.</div>
+                            <div style={{ fontSize: 12, color: '#757575' }}>아직 참고할 만한 데이터가 부족해요.</div>
                           ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                               {g.items.map((text, i) => (
@@ -1138,14 +1150,6 @@ export default function DashboardPage() {
             )
           })()}
 
-          {/* 연도 이동 + 총매출 팝업 */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6, marginBottom: 12 }}>
-            <button onClick={() => setYear(y => y - 1)} style={yearBtnStyle}>◀</button>
-            <span style={{ fontWeight: 700, fontSize: 15, minWidth: 60, textAlign: 'center' }}>{year}년</span>
-            <button onClick={() => setYear(y => y + 1)} style={yearBtnStyle}>▶</button>
-            <button onClick={openTotalModal} style={{ ...yearBtnStyle, marginLeft: 6, background: '#0f172a', color: '#fff', border: '1px solid #0f172a' }}>총매출</button>
-          </div>
-
           {/* KPI 3개 */}
           <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(3,1fr)' }}>
             <div className="kpi-card" style={{ border: '1px solid #94a3b8' }}>
@@ -1158,7 +1162,7 @@ export default function DashboardPage() {
                   </span>
                 )}
               </div>
-              <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>전년도 매출액 {formatWon(annualKpi.prevGross)}</div>
+              <div style={{ fontSize: 11, color: '#757575', marginTop: 2 }}>전년도 매출액 {formatWon(annualKpi.prevGross)}</div>
               <div className="kpi-sub">전 채널 결제 완료 합산</div>
             </div>
             <div className="kpi-card" style={{ border: '1px solid #94a3b8' }}>
@@ -1171,14 +1175,22 @@ export default function DashboardPage() {
                   </span>
                 )}
               </div>
-              <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>전년도 순매출액 {formatWon(annualKpi.prevNet)}</div>
+              <div style={{ fontSize: 11, color: '#757575', marginTop: 2 }}>전년도 순매출액 {formatWon(annualKpi.prevNet)}</div>
               <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ fontSize: 12, color: '#e11d48', fontWeight: 700 }}>- {formatWon(annualKpi.fee)}</span>
-                <span style={{ fontSize: 11, color: '#94a3b8' }}>수수료</span>
+                <span style={{ fontSize: 11, color: '#757575' }}>수수료</span>
               </div>
             </div>
             <div className="kpi-card" style={{ border: '1px solid #94a3b8' }}>
-              <div className="kpi-label" style={{ fontSize: 15, color: '#000', fontWeight: 700 }}>순수익</div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
+                <div className="kpi-label" style={{ fontSize: 15, color: '#000', fontWeight: 700 }}>순수익</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <button onClick={openTotalModal} style={{ ...yearBtnStyle, background: '#0f172a', color: '#fff', border: '1px solid #0f172a' }}>총매출</button>
+                  <button onClick={() => setYear(y => y - 1)} style={yearBtnStyle}>◀</button>
+                  <span style={{ fontWeight: 700, fontSize: 13, minWidth: 48, textAlign: 'center' }}>{year}년</span>
+                  <button onClick={() => setYear(y => y + 1)} style={yearBtnStyle}>▶</button>
+                </div>
+              </div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
                 <span className="kpi-value" style={{ color: annualKpi.profit >= 0 ? '#059669' : '#e11d48', fontSize: 25 }}>{formatWon(annualKpi.profit)}</span>
                 {annualKpi.gross > 0 && (
@@ -1189,9 +1201,9 @@ export default function DashboardPage() {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
                 <span style={{ fontSize: 12, color: '#64748b', fontWeight: 700 }}>- {formatWon(annualKpi.cost + annualKpi.shipping)}</span>
-                <span style={{ fontSize: 11, color: '#94a3b8' }}>원가+택배비</span>
+                <span style={{ fontSize: 11, color: '#757575' }}>원가+택배비</span>
               </div>
-              <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4 }}>
+              <div style={{ fontSize: 10, color: '#757575', marginTop: 4 }}>
                 {year - 1}년 순수익 {formatWon(annualKpi.prevProfit)}
                 {profitYoyPct !== null && (
                   <span style={{ fontWeight: 700, color: profitYoyPct >= 0 ? '#059669' : '#e11d48' }}>
@@ -1199,10 +1211,10 @@ export default function DashboardPage() {
                   </span>
                 )}
               </div>
-              <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4 }}>
+              <div style={{ fontSize: 10, color: '#757575', marginTop: 4 }}>
                 원가 {formatWon(annualKpi.cost)} · 택배비 {formatWon(annualKpi.shipping)}{annualKpi.adCharge > 0 ? ` · 충전 광고비 ${formatWon(annualKpi.adCharge)}` : ''}
               </div>
-              <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4 }}>
+              <div style={{ fontSize: 10, color: '#757575', marginTop: 4 }}>
                 원가 {costPct}% · 택배비 {shippingPct}% · 광고비 {adChargePct}% · 수수료 {feePct}%
               </div>
               <div style={{ fontSize: 10, color: '#dc2626', fontWeight: 400, marginTop: 6 }}>공헌이익률 15% 미만 위험 · 20% 미만 주의 · 30%↑ 안정권</div>
@@ -1215,15 +1227,10 @@ export default function DashboardPage() {
               <div style={{ fontSize: 13, fontWeight: 700, color: '#64748b' }}>
                 {selYear}년 {selMonth}월 매출
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <button onClick={prevMonth} style={monthBtnStyle}>◀</button>
-                <span style={{ fontSize: 13, fontWeight: 700, minWidth: 70, textAlign: 'center' }}>{selYear}.{selMonthStr}</span>
-                <button onClick={nextMonth} style={monthBtnStyle}>▶</button>
-              </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
               <div style={{ background: '#fafafa', border: '1px solid #94a3b8', borderRadius: 16, padding: 20 }}>
-                <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 8 }}>{selYear % 100}.{selMonthStr} 매출액</div>
+                <div style={{ fontSize: 11, color: '#757575', fontWeight: 700, marginBottom: 8 }}>{selYear % 100}.{selMonthStr} 매출액</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
                   <span style={{ fontSize: 22, fontWeight: 800, color: '#000' }}>{formatWon(monthKpi.gross)}</span>
                   {mGrossYoyPct !== null && (
@@ -1232,11 +1239,11 @@ export default function DashboardPage() {
                     </span>
                   )}
                 </div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>전년동월 매출액 {formatWon(monthKpi.prevGross)}</div>
-                <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>결제 완료 총액</div>
+                <div style={{ fontSize: 11, color: '#757575', marginTop: 2 }}>전년동월 매출액 {formatWon(monthKpi.prevGross)}</div>
+                <div style={{ fontSize: 12, color: '#757575', marginTop: 2 }}>결제 완료 총액</div>
               </div>
               <div style={{ background: '#fafafa', border: '1px solid #94a3b8', borderRadius: 16, padding: 20 }}>
-                <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 8 }}>{selYear % 100}.{selMonthStr} 순매출액 (수수료 제외)</div>
+                <div style={{ fontSize: 11, color: '#757575', fontWeight: 700, marginBottom: 8 }}>{selYear % 100}.{selMonthStr} 순매출액 (수수료 제외)</div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
                   <span style={{ fontSize: 22, fontWeight: 800, color: '#2563eb' }}>{formatWon(monthKpi.net)}</span>
                   {mNetYoyPct !== null && (
@@ -1245,14 +1252,21 @@ export default function DashboardPage() {
                     </span>
                   )}
                 </div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>전년동월 순매출액 {formatWon(monthKpi.prevNet)}</div>
+                <div style={{ fontSize: 11, color: '#757575', marginTop: 2 }}>전년동월 순매출액 {formatWon(monthKpi.prevNet)}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
                   <span style={{ fontSize: 12, color: '#e11d48', fontWeight: 700 }}>- {formatWon(monthKpi.fee)}</span>
-                  <span style={{ fontSize: 11, color: '#94a3b8' }}>수수료</span>
+                  <span style={{ fontSize: 11, color: '#757575' }}>수수료</span>
                 </div>
               </div>
               <div style={{ background: '#fafafa', border: '1px solid #94a3b8', borderRadius: 16, padding: 20 }}>
-                <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 8 }}>{selYear % 100}.{selMonthStr} 순수익</div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                  <div style={{ fontSize: 11, color: '#757575', fontWeight: 700 }}>{selYear % 100}.{selMonthStr} 순수익</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <button onClick={prevMonth} style={monthBtnStyle}>◀</button>
+                    <span style={{ fontSize: 12, fontWeight: 700, minWidth: 56, textAlign: 'center' }}>{selYear}.{selMonthStr}</span>
+                    <button onClick={nextMonth} style={monthBtnStyle}>▶</button>
+                  </div>
+                </div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
                   <span style={{ fontSize: 22, fontWeight: 800, color: monthKpi.profit >= 0 ? '#059669' : '#e11d48' }}>{formatWon(monthKpi.profit)}</span>
                   {monthKpi.gross > 0 && (
@@ -1261,7 +1275,7 @@ export default function DashboardPage() {
                     </span>
                   )}
                 </div>
-                <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4 }}>
+                <div style={{ fontSize: 10, color: '#757575', marginTop: 4 }}>
                   전년동월 순수익 {formatWon(monthKpi.prevProfit)}
                   {mProfitYoyPct !== null && (
                     <span style={{ fontWeight: 700, color: mProfitYoyPct >= 0 ? '#059669' : '#e11d48' }}>
@@ -1269,10 +1283,10 @@ export default function DashboardPage() {
                     </span>
                   )}
                 </div>
-                <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4 }}>
+                <div style={{ fontSize: 10, color: '#757575', marginTop: 4 }}>
                   원가 {formatWon(monthKpi.cost)} · 택배비 {formatWon(monthKpi.shipping)}{monthKpi.adCharge > 0 ? ` · 충전 광고비 ${formatWon(monthKpi.adCharge)}` : ''}
                 </div>
-                <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4 }}>
+                <div style={{ fontSize: 10, color: '#757575', marginTop: 4 }}>
                   원가 {mCostPct}% · 택배비 {mShippingPct}% · 광고비 {mAdChargePct}% · 수수료 {mFeePct}%
                 </div>
               </div>
@@ -1285,26 +1299,7 @@ export default function DashboardPage() {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#64748b' }}>시즌별 매출</div>
-                <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>
-                  전 기간 누적 기준 (시즌은 연도 경계를 넘나들기 때문에 연도로 나누지 않음)
-                  {seasonUnmatched.count > 0 && (
-                    <span style={{ color: '#e11d48', fontWeight: 700 }}>
-                      {' '}· 시즌 미지정 {seasonUnmatched.count.toLocaleString('ko-KR')}건 {formatWon(seasonUnmatched.gross)} 제외됨
-                    </span>
-                  )}
-                </div>
               </div>
-              {channelSummarySeasonData.length > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  {/* ◀ = 이전(과거) 시즌으로 이동 (26SS → 25FW → 25SS …), ▶ = 최신 시즌 방향. 새 시즌(26FW, 27SS 등)을 등록하면 자동으로 목록에 추가됨 */}
-                  <button onClick={() => setChannelSummarySeasonIdx(i => Math.min(i + 1, channelSummarySeasonData.length - 1))} style={monthBtnStyle}>◀</button>
-                  <span style={{ fontSize: 13, fontWeight: 700, minWidth: 70, textAlign: 'center', color: '#000' }}>
-                    {channelSummarySeasonData[channelSummarySeasonIdx]?.season}
-                  </span>
-                  <button onClick={() => setChannelSummarySeasonIdx(i => Math.max(i - 1, 0))} style={monthBtnStyle}>▶</button>
-                  <button onClick={() => setShowSeasonSalesModal(true)} style={{ ...monthBtnStyle, marginLeft: 6, background: '#0f172a', color: '#fff', border: '1px solid #0f172a' }}>판매표</button>
-                </div>
-              )}
             </div>
             {channelSummarySeasonLoading ? (
               <div className="chart-empty">불러오는 중...</div>
@@ -1324,7 +1319,7 @@ export default function DashboardPage() {
                 <>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
                     <div style={{ background: '#fafafa', border: '1px solid #94a3b8', borderRadius: 16, padding: 20 }}>
-                      <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 8 }}>총 매출액</div>
+                      <div style={{ fontSize: 11, color: '#757575', fontWeight: 700, marginBottom: 8 }}>총 매출액</div>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
                         <span style={{ fontSize: 22, fontWeight: 800, color: '#000' }}>{formatWon(s.gross)}</span>
                         {grossPct !== null && (
@@ -1333,10 +1328,10 @@ export default function DashboardPage() {
                           </span>
                         )}
                       </div>
-                      {prevS && <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 6 }}>전 시즌({prevS.season}) 매출액 {formatWon(prevS.gross)}</div>}
+                      {prevS && <div style={{ fontSize: 10, color: '#757575', marginTop: 6 }}>전 시즌({prevS.season}) 매출액 {formatWon(prevS.gross)}</div>}
                     </div>
                     <div style={{ background: '#fafafa', border: '1px solid #94a3b8', borderRadius: 16, padding: 20 }}>
-                      <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 8 }}>순매출액</div>
+                      <div style={{ fontSize: 11, color: '#757575', fontWeight: 700, marginBottom: 8 }}>순매출액</div>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
                         <span style={{ fontSize: 22, fontWeight: 800, color: '#2563eb' }}>{formatWon(s.net)}</span>
                         {netPct !== null && (
@@ -1346,11 +1341,24 @@ export default function DashboardPage() {
                         )}
                       </div>
                       <div style={{ fontSize: 11, color: '#e11d48', marginTop: 6 }}>- {formatWon(fees)} 수수료</div>
-                      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>수수료 제외 실매출</div>
-                      {prevS && <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>전 시즌({prevS.season}) 순매출액 {formatWon(prevS.net)}</div>}
+                      <div style={{ fontSize: 11, color: '#757575', marginTop: 2 }}>수수료 제외 실매출</div>
+                      {prevS && <div style={{ fontSize: 10, color: '#757575', marginTop: 2 }}>전 시즌({prevS.season}) 순매출액 {formatWon(prevS.net)}</div>}
                     </div>
                     <div style={{ background: '#fafafa', border: '1px solid #94a3b8', borderRadius: 16, padding: 20 }}>
-                      <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 8 }}>순수익</div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                        <div style={{ fontSize: 11, color: '#757575', fontWeight: 700 }}>순수익</div>
+                        {channelSummarySeasonData.length > 0 && (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <button onClick={() => setShowSeasonSalesModal(true)} style={{ ...monthBtnStyle, background: '#0f172a', color: '#fff', border: '1px solid #0f172a' }}>판매표</button>
+                            {/* ◀ = 이전(과거) 시즌으로 이동 (26SS → 25FW → 25SS …), ▶ = 최신 시즌 방향 */}
+                            <button onClick={() => setChannelSummarySeasonIdx(i => Math.min(i + 1, channelSummarySeasonData.length - 1))} style={monthBtnStyle}>◀</button>
+                            <span style={{ fontSize: 12, fontWeight: 700, minWidth: 56, textAlign: 'center', color: '#000' }}>
+                              {channelSummarySeasonData[channelSummarySeasonIdx]?.season}
+                            </span>
+                            <button onClick={() => setChannelSummarySeasonIdx(i => Math.max(i - 1, 0))} style={monthBtnStyle}>▶</button>
+                          </div>
+                        )}
+                      </div>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
                         <span style={{ fontSize: 22, fontWeight: 800, color: s.profit >= 0 ? '#059669' : '#e11d48' }}>{formatWon(s.profit)}</span>
                         {profitPct !== null && (
@@ -1367,8 +1375,8 @@ export default function DashboardPage() {
                           </span>
                         )}
                       </div>
-                      <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>원가 {formatWon(s.cost)} · 택배비 {formatWon(s.shipping)}</div>
-                      {prevS && <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>전 시즌({prevS.season}) 순수익 {formatWon(prevS.profit)}</div>}
+                      <div style={{ fontSize: 10, color: '#757575', marginTop: 2 }}>원가 {formatWon(s.cost)} · 택배비 {formatWon(s.shipping)}</div>
+                      {prevS && <div style={{ fontSize: 10, color: '#757575', marginTop: 2 }}>전 시즌({prevS.season}) 순수익 {formatWon(prevS.profit)}</div>}
                     </div>
                   </div>
                 </>
@@ -1415,7 +1423,7 @@ export default function DashboardPage() {
                 <thead>
                   <tr style={{ background: '#f8fafc' }}>
                     {['채널', '총 매출액', '수수료', '순매출액', '순수익', '비중'].map(h => (
-                      <th key={h} style={{ padding: '10px 14px', textAlign: 'center', borderBottom: '1px solid #94a3b8', fontSize: 11, color: '#94a3b8', fontWeight: 700 }}>{h}</th>
+                      <th key={h} style={{ padding: '10px 14px', textAlign: 'center', borderBottom: '1px solid #94a3b8', fontSize: 11, color: '#757575', fontWeight: 700 }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -1573,7 +1581,7 @@ export default function DashboardPage() {
                 <button onClick={() => shiftSalesChartYear(1)} style={monthBtnStyle}>▶</button>
               </div>
             </div>
-            <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 16 }}>
+            <div style={{ fontSize: 12, color: '#757575', marginBottom: 16 }}>
               매출액 · 순매출액 {salesChartHasPrevYearData ? `· ${salesChartYear - 1}년 순매출액(비교)` : ''}
             </div>
             {salesChartLoading ? (
@@ -1629,7 +1637,7 @@ export default function DashboardPage() {
             )}
 
             <div style={{ fontWeight: 700, fontSize: 15, color: '#000', marginTop: 24, marginBottom: 4 }}>{salesChartYear}년 월별 판매수량</div>
-            <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 16 }}>순수 판매 건수 · 전년동월 판매건수 비교</div>
+            <div style={{ fontSize: 12, color: '#757575', marginBottom: 16 }}>순수 판매 건수 · 전년동월 판매건수 비교</div>
             {!salesChartLoading && salesChartHasData && (
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={qtyChartData} margin={{ top: 20, right: 10, left: 0, bottom: 0 }}>
@@ -1695,18 +1703,18 @@ export default function DashboardPage() {
             )}
             {trendMode === 'weekly' && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                <span style={{ fontSize: 12, color: '#94a3b8' }}>이 달까지</span>
+                <span style={{ fontSize: 12, color: '#757575' }}>이 달까지</span>
                 <input
                   type="month"
                   value={trendMonthAnchor}
                   onChange={e => setTrendMonthAnchor(e.target.value)}
                   style={{ border: '1px solid #94a3b8', borderRadius: 6, padding: '4px 8px', fontSize: 12, color: '#000', background: '#fff' }}
                 />
-                <span style={{ fontSize: 12, color: '#94a3b8' }}>최근 12주</span>
+                <span style={{ fontSize: 12, color: '#757575' }}>최근 12주</span>
               </div>
             )}
 
-            <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 16 }}>
+            <div style={{ fontSize: 12, color: '#757575', marginBottom: 16 }}>
               매출액 · 순매출액 (전 채널 합산)
             </div>
             {trendLoading ? (
@@ -1736,43 +1744,43 @@ export default function DashboardPage() {
               현재는 무신사만 광고비·전환매출을 기록하고 있어서 무신사 기준으로만 표시하고, 다른 채널도 광고 데이터가 쌓이면 함께 반영하면 됨 */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
             <div className="chart-card" style={{ border: '1px solid #94a3b8' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                <div className="chart-title" style={{ margin: 0 }}>{adYear}년 연도 광고 성과지표</div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                <div className="chart-title" style={{ margin: 0, textAlign: 'center' }}>{adYear}년 연도 광고 성과지표</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <button onClick={() => setAdYear(y => y - 1)} style={monthBtnStyle}>◀</button>
                   <span style={{ fontSize: 12, fontWeight: 700, color: '#000' }}>{adYear}년</span>
                   <button onClick={() => setAdYear(y => y + 1)} style={monthBtnStyle}>▶</button>
                 </div>
               </div>
-              <div className="chart-sub">무신사 기준 · 다른 채널은 광고 데이터 연동 후 반영 예정</div>
+              <div className="chart-sub" style={{ textAlign: 'center' }}>무신사 기준 · 다른 채널은 광고 데이터 연동 후 반영 예정</div>
               {adLoading ? (
                 <div className="chart-empty">불러오는 중...</div>
               ) : adTotalCost === 0 ? (
                 <div className="chart-empty">광고 데이터가 없습니다</div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 8 }}>
-                  <div style={{ display: 'flex', gap: 24 }}>
-                    <div>
-                      <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 4 }}>총 광고비</div>
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: 24 }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 11, color: '#757575', fontWeight: 700, marginBottom: 4 }}>총 광고비</div>
                       <div style={{ fontSize: 20, fontWeight: 800, color: '#000' }}>{formatWon(adTotalCost)}</div>
                     </div>
-                    <div>
-                      <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 4 }}>총 전환매출</div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 11, color: '#757575', fontWeight: 700, marginBottom: 4 }}>총 전환매출</div>
                       <div style={{ fontSize: 20, fontWeight: 800, color: '#059669' }}>{formatWon(adTotalRevenue)}</div>
                     </div>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-around', gap: 8 }}>
                     <div style={{ textAlign: 'center', flex: 1 }}>
                       <div style={{ fontSize: 18, fontWeight: 800, color: '#4f46e5' }}>{adTotalRoas !== null ? `${adTotalRoas}%` : '-'}</div>
-                      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2, fontWeight: 700 }}>ROAS</div>
+                      <div style={{ fontSize: 11, color: '#757575', marginTop: 2, fontWeight: 700 }}>ROAS</div>
                     </div>
                     <div style={{ textAlign: 'center', flex: 1 }}>
                       <div style={{ fontSize: 18, fontWeight: 800, color: '#e11d48' }}>{adTotalAcos !== null ? `${adTotalAcos}%` : '-'}</div>
-                      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2, fontWeight: 700 }}>ACOS</div>
+                      <div style={{ fontSize: 11, color: '#757575', marginTop: 2, fontWeight: 700 }}>ACOS</div>
                     </div>
                     <div style={{ textAlign: 'center', flex: 1 }}>
                       <div style={{ fontSize: 18, fontWeight: 800, color: '#d97706' }}>{adTotalTacos !== null ? `${adTotalTacos}%` : '-'}</div>
-                      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2, fontWeight: 700 }}>TACOS</div>
+                      <div style={{ fontSize: 11, color: '#757575', marginTop: 2, fontWeight: 700 }}>TACOS</div>
                     </div>
                   </div>
                 </div>
@@ -1780,43 +1788,43 @@ export default function DashboardPage() {
             </div>
 
             <div className="chart-card" style={{ border: '1px solid #94a3b8' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                <div className="chart-title" style={{ margin: 0 }}>월별 광고 성과지표</div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                <div className="chart-title" style={{ margin: 0, textAlign: 'center' }}>월별 광고 성과지표</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <button onClick={prevAdMonth} style={monthBtnStyle}>◀</button>
                   <span style={{ fontSize: 12, fontWeight: 700, color: '#000' }}>{adYear}.{adMonthStr}</span>
                   <button onClick={nextAdMonth} style={monthBtnStyle}>▶</button>
                 </div>
               </div>
-              <div className="chart-sub">무신사 기준 · 선택한 달의 광고 실적</div>
+              <div className="chart-sub" style={{ textAlign: 'center' }}>무신사 기준 · 선택한 달의 광고 실적</div>
               {adLoading ? (
                 <div className="chart-empty">불러오는 중...</div>
               ) : adMonthCost === 0 ? (
                 <div className="chart-empty">광고 데이터가 없습니다</div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 8 }}>
-                  <div style={{ display: 'flex', gap: 24 }}>
-                    <div>
-                      <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 4 }}>이 달 광고비</div>
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: 24 }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 11, color: '#757575', fontWeight: 700, marginBottom: 4 }}>이 달 광고비</div>
                       <div style={{ fontSize: 20, fontWeight: 800, color: '#000' }}>{formatWon(adMonthCost)}</div>
                     </div>
-                    <div>
-                      <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 4 }}>이 달 전환매출</div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: 11, color: '#757575', fontWeight: 700, marginBottom: 4 }}>이 달 전환매출</div>
                       <div style={{ fontSize: 20, fontWeight: 800, color: '#059669' }}>{formatWon(adMonthRevenue)}</div>
                     </div>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-around', gap: 8 }}>
                     <div style={{ textAlign: 'center', flex: 1 }}>
                       <div style={{ fontSize: 18, fontWeight: 800, color: '#4f46e5' }}>{adMonthRoas !== null ? `${adMonthRoas}%` : '-'}</div>
-                      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2, fontWeight: 700 }}>ROAS</div>
+                      <div style={{ fontSize: 11, color: '#757575', marginTop: 2, fontWeight: 700 }}>ROAS</div>
                     </div>
                     <div style={{ textAlign: 'center', flex: 1 }}>
                       <div style={{ fontSize: 18, fontWeight: 800, color: '#e11d48' }}>{adMonthAcos !== null ? `${adMonthAcos}%` : '-'}</div>
-                      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2, fontWeight: 700 }}>ACOS</div>
+                      <div style={{ fontSize: 11, color: '#757575', marginTop: 2, fontWeight: 700 }}>ACOS</div>
                     </div>
                     <div style={{ textAlign: 'center', flex: 1 }}>
                       <div style={{ fontSize: 18, fontWeight: 800, color: '#d97706' }}>{adMonthTacos !== null ? `${adMonthTacos}%` : '-'}</div>
-                      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2, fontWeight: 700 }}>TACOS</div>
+                      <div style={{ fontSize: 11, color: '#757575', marginTop: 2, fontWeight: 700 }}>TACOS</div>
                     </div>
                   </div>
                 </div>
@@ -1867,21 +1875,21 @@ export default function DashboardPage() {
                       <div style={{ fontSize: 16, fontWeight: 800, color: '#4f46e5', marginBottom: 5 }}>ROAS</div>
                       <div style={{ fontSize: 13, color: '#475569', lineHeight: 1.6 }}>
                         광고비 대비 전환매출 비율<br />(전환매출 ÷ 광고비 × 100)<br />
-                        <span style={{ color: '#94a3b8' }}>높을수록 광고 효율이 좋음</span>
+                        <span style={{ color: '#757575' }}>높을수록 광고 효율이 좋음</span>
                       </div>
                     </div>
                     <div style={{ background: '#f8fafc', borderRadius: 10, padding: '14px 16px', textAlign: 'center' }}>
                       <div style={{ fontSize: 16, fontWeight: 800, color: '#e11d48', marginBottom: 5 }}>ACOS</div>
                       <div style={{ fontSize: 13, color: '#475569', lineHeight: 1.6 }}>
                         전환매출 대비 광고비 비율<br />(광고비 ÷ 전환매출 × 100)<br />
-                        <span style={{ color: '#94a3b8' }}>낮을수록 좋음</span>
+                        <span style={{ color: '#757575' }}>낮을수록 좋음</span>
                       </div>
                     </div>
                     <div style={{ background: '#f8fafc', borderRadius: 10, padding: '14px 16px', textAlign: 'center' }}>
                       <div style={{ fontSize: 16, fontWeight: 800, color: '#d97706', marginBottom: 5 }}>TACOS</div>
                       <div style={{ fontSize: 13, color: '#475569', lineHeight: 1.6 }}>
                         전체 매출 대비 광고비 비율<br />(광고비 ÷ 전체 매출 × 100)<br />
-                        <span style={{ color: '#94a3b8' }}>낮을수록 광고 의존도가 낮음</span>
+                        <span style={{ color: '#757575' }}>낮을수록 광고 의존도가 낮음</span>
                       </div>
                     </div>
                   </div>
@@ -1890,9 +1898,9 @@ export default function DashboardPage() {
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
                     <thead>
                       <tr style={{ background: '#f8fafc' }}>
-                        <th style={{ padding: '13px 14px', textAlign: 'center', borderBottom: '1px solid #94a3b8', fontSize: 13, color: '#94a3b8', fontWeight: 700, whiteSpace: 'nowrap' }}>구분</th>
+                        <th style={{ padding: '13px 14px', textAlign: 'center', borderBottom: '1px solid #94a3b8', fontSize: 13, color: '#757575', fontWeight: 700, whiteSpace: 'nowrap' }}>구분</th>
                         {adMonthlyChartData.map((row, i) => (
-                          <th key={i} style={{ padding: '13px 14px', textAlign: 'center', borderBottom: '1px solid #94a3b8', fontSize: 13, color: '#94a3b8', fontWeight: 700, whiteSpace: 'nowrap' }}>{row.name}</th>
+                          <th key={i} style={{ padding: '13px 14px', textAlign: 'center', borderBottom: '1px solid #94a3b8', fontSize: 13, color: '#757575', fontWeight: 700, whiteSpace: 'nowrap' }}>{row.name}</th>
                         ))}
                       </tr>
                     </thead>
@@ -1979,7 +1987,7 @@ export default function DashboardPage() {
                             {isFirstOfItem && (
                               <td rowSpan={itemRowCount} style={{ padding: '8px 12px', fontWeight: 700, color: '#000', verticalAlign: 'top', borderRight: '1px solid #f1f5f9' }}>
                                 {r.item}
-                                {itemRowCount > 1 && <div style={{ fontSize: 10, color: '#94a3b8', fontWeight: 400, marginTop: 2 }}>합계 {itemTotal.toLocaleString('ko-KR')}장</div>}
+                                {itemRowCount > 1 && <div style={{ fontSize: 10, color: '#757575', fontWeight: 400, marginTop: 2 }}>합계 {itemTotal.toLocaleString('ko-KR')}장</div>}
                               </td>
                             )}
                             <td style={{ padding: '8px 12px', color: '#000' }}>{r.option}</td>
@@ -2026,19 +2034,19 @@ export default function DashboardPage() {
               <>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 24 }}>
                   <div style={{ background: '#f8fafc', borderRadius: 14, padding: 16 }}>
-                    <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 6 }}>총 매출액</div>
+                    <div style={{ fontSize: 11, color: '#757575', fontWeight: 700, marginBottom: 6 }}>총 매출액</div>
                     <div style={{ fontSize: 16, fontWeight: 800, color: '#000' }}>{formatWon(totalSummary.gross)}</div>
                   </div>
                   <div style={{ background: '#f8fafc', borderRadius: 14, padding: 16 }}>
-                    <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 6 }}>순매출액</div>
+                    <div style={{ fontSize: 11, color: '#757575', fontWeight: 700, marginBottom: 6 }}>순매출액</div>
                     <div style={{ fontSize: 16, fontWeight: 800, color: '#2563eb' }}>{formatWon(totalSummary.net)}</div>
                   </div>
                   <div style={{ background: '#f8fafc', borderRadius: 14, padding: 16 }}>
-                    <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 6 }}>순수익</div>
+                    <div style={{ fontSize: 11, color: '#757575', fontWeight: 700, marginBottom: 6 }}>순수익</div>
                     <div style={{ fontSize: 16, fontWeight: 800, color: totalSummary.profit >= 0 ? '#059669' : '#e11d48' }}>{formatWon(totalSummary.profit)}</div>
                   </div>
                 </div>
-                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 20 }}>
+                <div style={{ fontSize: 11, color: '#757575', marginBottom: 20 }}>
                   원가 {formatWon(totalSummary.cost)} · 택배비 {formatWon(totalSummary.shipping)}{totalSummary.adCharge > 0 ? ` · 충전 광고비 ${formatWon(totalSummary.adCharge)}` : ''} (전 채널·전 기간 누적)
                 </div>
 

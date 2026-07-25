@@ -194,19 +194,19 @@ export default function RepairPage() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8,1fr)', gap: 8, marginBottom: 16 }}>
         <div style={{ background: '#fff', border: '1px solid #94a3b8', borderRadius: 10, padding: 10 }}>
-          <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700, marginBottom: 4 }}>수선중</div>
+          <div style={{ fontSize: 12, color: '#757575', fontWeight: 700, marginBottom: 4 }}>수선중</div>
           <div style={{ fontSize: 18, fontWeight: 800, color: '#d97706' }}>{repairingCount}건</div>
         </div>
         <div style={{ background: '#fff', border: '1px solid #94a3b8', borderRadius: 10, padding: 10 }}>
-          <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700, marginBottom: 4 }}>수선완료</div>
+          <div style={{ fontSize: 12, color: '#757575', fontWeight: 700, marginBottom: 4 }}>수선완료</div>
           <div style={{ fontSize: 18, fontWeight: 800, color: '#059669' }}>{repairedCount}건</div>
         </div>
         <div style={{ background: '#fff', border: '1px solid #94a3b8', borderRadius: 10, padding: 10 }}>
-          <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700, marginBottom: 4 }}>폐기</div>
+          <div style={{ fontSize: 12, color: '#757575', fontWeight: 700, marginBottom: 4 }}>폐기</div>
           <div style={{ fontSize: 18, fontWeight: 800, color: '#e11d48' }}>{discardedCount}건</div>
         </div>
         <div style={{ background: '#fff', border: '1px solid #94a3b8', borderRadius: 10, padding: 10 }}>
-          <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700, marginBottom: 4 }}>원가 합계</div>
+          <div style={{ fontSize: 12, color: '#757575', fontWeight: 700, marginBottom: 4 }}>원가 합계</div>
           <div style={{ fontSize: 18, fontWeight: 800 }}>{totalCost.toLocaleString('ko-KR')}원</div>
         </div>
 
@@ -218,7 +218,7 @@ export default function RepairPage() {
             <>
               <div style={{ background: '#fff', border: '1px solid #94a3b8', borderRadius: 10, padding: 10 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700 }}>{season} 건수</span>
+                  <span style={{ fontSize: 12, color: '#757575', fontWeight: 700 }}>{season} 건수</span>
                   <div style={{ display: 'flex', gap: 2 }}>
                     <button onClick={() => setSeasonIdx(i => hasData ? Math.min(i + 1, seasonSummary.length - 1) : 0)} style={{ ...monthNavBtnStyle, padding: '2px 6px', fontSize: 12 }}>◀</button>
                     <button onClick={() => setSeasonIdx(i => Math.max(i - 1, 0))} style={{ ...monthNavBtnStyle, padding: '2px 6px', fontSize: 12 }}>▶</button>
@@ -227,7 +227,7 @@ export default function RepairPage() {
                 <div style={{ fontSize: 18, fontWeight: 800 }}>{s.count}건</div>
               </div>
               <div style={{ background: '#fff', border: '1px solid #94a3b8', borderRadius: 10, padding: 10 }}>
-                <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700, marginBottom: 4 }}>{season} 원가</div>
+                <div style={{ fontSize: 12, color: '#757575', fontWeight: 700, marginBottom: 4 }}>{season} 원가</div>
                 <div style={{ fontSize: 18, fontWeight: 800 }}>{s.cost.toLocaleString('ko-KR')}원</div>
               </div>
             </>
@@ -241,7 +241,7 @@ export default function RepairPage() {
             <>
               <div style={{ background: '#fff', border: '1px solid #94a3b8', borderRadius: 10, padding: 10 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700 }}>{shortMonth} 건수</span>
+                  <span style={{ fontSize: 12, color: '#757575', fontWeight: 700 }}>{shortMonth} 건수</span>
                   <div style={{ display: 'flex', gap: 2 }}>
                     <button onClick={() => shiftMonth(-1)} style={{ ...monthNavBtnStyle, padding: '2px 6px', fontSize: 12 }}>◀</button>
                     <button onClick={() => shiftMonth(1)} style={{ ...monthNavBtnStyle, padding: '2px 6px', fontSize: 12 }}>▶</button>
@@ -250,7 +250,7 @@ export default function RepairPage() {
                 <div style={{ fontSize: 18, fontWeight: 800 }}>{stat.count}건</div>
               </div>
               <div style={{ background: '#fff', border: '1px solid #94a3b8', borderRadius: 10, padding: 10 }}>
-                <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700, marginBottom: 4 }}>{shortMonth} 원가</div>
+                <div style={{ fontSize: 12, color: '#757575', fontWeight: 700, marginBottom: 4 }}>{shortMonth} 원가</div>
                 <div style={{ fontSize: 18, fontWeight: 800 }}>{stat.cost.toLocaleString('ko-KR')}원</div>
               </div>
             </>
@@ -311,7 +311,7 @@ export default function RepairPage() {
             </thead>
             <tbody>
               {rows.length === 0 ? (
-                <tr><td colSpan={10} style={{ textAlign: 'center', padding: 48, color: '#94a3b8' }}>등록된 수선 기록이 없습니다.</td></tr>
+                <tr><td colSpan={10} style={{ textAlign: 'center', padding: 48, color: '#757575' }}>등록된 수선 기록이 없습니다.</td></tr>
               ) : rows.map(r => (
                 <tr key={r.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                   <td style={{ padding: '8px', textAlign: 'center' }}>{r.repair_date}</td>
@@ -322,8 +322,8 @@ export default function RepairPage() {
                   <td style={{ padding: '8px', textAlign: 'center' }}>{r.item?.option_name || '-'}</td>
                   <td style={{ padding: '8px', textAlign: 'center', fontWeight: 700 }}>{r.qty}개</td>
                   <td style={{ padding: '8px', textAlign: 'center' }}>{r.vendor || '-'}</td>
-                  <td style={{ padding: '8px', textAlign: 'center', color: '#94a3b8' }}>{r.defect_note || '-'}</td>
-                  <td style={{ padding: '8px', color: '#94a3b8', fontSize: 12 }}>{r.memo || '-'}</td>
+                  <td style={{ padding: '8px', textAlign: 'center', color: '#757575' }}>{r.defect_note || '-'}</td>
+                  <td style={{ padding: '8px', color: '#757575', fontSize: 12 }}>{r.memo || '-'}</td>
                   <td style={{ padding: '8px', textAlign: 'center' }}>
                     <select value={r.status} onChange={e => changeStatus(r.id, e.target.value as RepairRow['status'])}
                       style={{
@@ -352,6 +352,6 @@ export default function RepairPage() {
   )
 }
 
-const labelStyle: React.CSSProperties = { fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 4 }
+const labelStyle: React.CSSProperties = { fontSize: 11, color: '#757575', fontWeight: 700, marginBottom: 4 }
 const selectStyle: React.CSSProperties = { width: '100%', padding: '8px 10px', border: '1px solid #94a3b8', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', background: '#fff' }
 const inputStyle: React.CSSProperties = { width: '100%', padding: '8px 10px', border: '1px solid #94a3b8', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', background: '#fff' }

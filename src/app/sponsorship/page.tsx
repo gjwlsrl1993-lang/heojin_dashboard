@@ -270,19 +270,19 @@ export default function SponsorshipPage() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8,1fr)', gap: 8, marginBottom: 16 }}>
         <div style={{ background: '#fff', border: '1px solid #94a3b8', borderRadius: 10, padding: 10 }}>
-          <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700, marginBottom: 4 }}>총 협찬 건수</div>
+          <div style={{ fontSize: 12, color: '#757575', fontWeight: 700, marginBottom: 4 }}>총 협찬 건수</div>
           <div style={{ fontSize: 18, fontWeight: 800 }}>{rows.length}건</div>
         </div>
         <div style={{ background: '#fff', border: '1px solid #94a3b8', borderRadius: 10, padding: 10 }}>
-          <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700, marginBottom: 4 }}>총 나간 수량</div>
+          <div style={{ fontSize: 12, color: '#757575', fontWeight: 700, marginBottom: 4 }}>총 나간 수량</div>
           <div style={{ fontSize: 18, fontWeight: 800 }}>{totalQty}개</div>
         </div>
         <div style={{ background: '#fff', border: '1px solid #94a3b8', borderRadius: 10, padding: 10 }}>
-          <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700, marginBottom: 4 }}>미반납 건수</div>
+          <div style={{ fontSize: 12, color: '#757575', fontWeight: 700, marginBottom: 4 }}>미반납 건수</div>
           <div style={{ fontSize: 18, fontWeight: 800, color: notReturnedCount > 0 ? '#d97706' : '#059669' }}>{notReturnedCount}건</div>
         </div>
         <div style={{ background: '#fff', border: '1px solid #94a3b8', borderRadius: 10, padding: 10 }}>
-          <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700, marginBottom: 4 }}>원가+택배비 합계</div>
+          <div style={{ fontSize: 12, color: '#757575', fontWeight: 700, marginBottom: 4 }}>원가+택배비 합계</div>
           <div style={{ fontSize: 18, fontWeight: 800 }}>{totalCost.toLocaleString('ko-KR')}원</div>
         </div>
 
@@ -294,7 +294,7 @@ export default function SponsorshipPage() {
             <>
               <div style={{ background: '#fff', border: '1px solid #94a3b8', borderRadius: 10, padding: 10 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700 }}>{season} 건수</span>
+                  <span style={{ fontSize: 12, color: '#757575', fontWeight: 700 }}>{season} 건수</span>
                   <div style={{ display: 'flex', gap: 2 }}>
                     <button onClick={() => setSeasonIdx(i => hasData ? Math.min(i + 1, seasonSummary.length - 1) : 0)} style={{ ...monthNavBtnStyle, padding: '2px 6px', fontSize: 10 }}>◀</button>
                     <button onClick={() => setSeasonIdx(i => Math.max(i - 1, 0))} style={{ ...monthNavBtnStyle, padding: '2px 6px', fontSize: 10 }}>▶</button>
@@ -303,7 +303,7 @@ export default function SponsorshipPage() {
                 <div style={{ fontSize: 18, fontWeight: 800 }}>{s.count}건</div>
               </div>
               <div style={{ background: '#fff', border: '1px solid #94a3b8', borderRadius: 10, padding: 10 }}>
-                <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700, marginBottom: 4 }}>{season} 원가+택배비</div>
+                <div style={{ fontSize: 12, color: '#757575', fontWeight: 700, marginBottom: 4 }}>{season} 원가+택배비</div>
                 <div style={{ fontSize: 18, fontWeight: 800 }}>{s.cost.toLocaleString('ko-KR')}원</div>
               </div>
             </>
@@ -317,7 +317,7 @@ export default function SponsorshipPage() {
             <>
               <div style={{ background: '#fff', border: '1px solid #94a3b8', borderRadius: 10, padding: 10 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700 }}>{shortMonth} 건수</span>
+                  <span style={{ fontSize: 12, color: '#757575', fontWeight: 700 }}>{shortMonth} 건수</span>
                   <div style={{ display: 'flex', gap: 2 }}>
                     <button onClick={() => shiftMonth(-1)} style={{ ...monthNavBtnStyle, padding: '2px 6px', fontSize: 10 }}>◀</button>
                     <button onClick={() => shiftMonth(1)} style={{ ...monthNavBtnStyle, padding: '2px 6px', fontSize: 10 }}>▶</button>
@@ -326,7 +326,7 @@ export default function SponsorshipPage() {
                 <div style={{ fontSize: 18, fontWeight: 800 }}>{stat.count}건</div>
               </div>
               <div style={{ background: '#fff', border: '1px solid #94a3b8', borderRadius: 10, padding: 10 }}>
-                <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700, marginBottom: 4 }}>{shortMonth} 원가+택배비</div>
+                <div style={{ fontSize: 12, color: '#757575', fontWeight: 700, marginBottom: 4 }}>{shortMonth} 원가+택배비</div>
                 <div style={{ fontSize: 18, fontWeight: 800 }}>{stat.cost.toLocaleString('ko-KR')}원</div>
               </div>
             </>
@@ -395,10 +395,10 @@ export default function SponsorshipPage() {
             </thead>
             <tbody>
               {rows.length === 0 ? (
-                <tr><td colSpan={13} style={{ textAlign: 'center', padding: 48, color: '#94a3b8' }}>등록된 협찬 기록이 없습니다.</td></tr>
+                <tr><td colSpan={13} style={{ textAlign: 'center', padding: 48, color: '#757575' }}>등록된 협찬 기록이 없습니다.</td></tr>
               ) : rows.map((r, idx) => (
                 <tr key={r.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '8px', textAlign: 'center', color: '#94a3b8' }}>{idx + 1}</td>
+                  <td style={{ padding: '8px', textAlign: 'center', color: '#757575' }}>{idx + 1}</td>
                   <td style={{ padding: '8px', textAlign: 'center' }}>
                     <span style={{ background: '#f1f5f9', color: '#475569', padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 600 }}>{r.item?.season || '-'}</span>
                   </td>
@@ -418,9 +418,9 @@ export default function SponsorshipPage() {
                   </td>
                   <td style={{ padding: '8px', textAlign: 'center', fontWeight: 700 }}>{r.qty}개</td>
                   <td style={{ padding: '8px', textAlign: 'center' }}>{r.recipient || '-'}</td>
-                  <td style={{ padding: '8px', textAlign: 'center', color: '#94a3b8' }}>{r.contact || '-'}</td>
-                  <td style={{ padding: '8px', textAlign: 'center', color: '#94a3b8' }}>{r.email || '-'}</td>
-                  <td style={{ padding: '8px', color: '#94a3b8', fontSize: 12 }}>{r.memo || '-'}</td>
+                  <td style={{ padding: '8px', textAlign: 'center', color: '#757575' }}>{r.contact || '-'}</td>
+                  <td style={{ padding: '8px', textAlign: 'center', color: '#757575' }}>{r.email || '-'}</td>
+                  <td style={{ padding: '8px', color: '#757575', fontSize: 12 }}>{r.memo || '-'}</td>
                   <td style={{ padding: '8px', textAlign: 'center' }}>
                     <button onClick={() => deleteRecord(r.id)} title="삭제"
                       style={{ border: 'none', background: 'none', color: '#e11d48', cursor: 'pointer', fontSize: 15, fontWeight: 800, lineHeight: 1 }}>
@@ -437,7 +437,7 @@ export default function SponsorshipPage() {
   )
 }
 
-const labelStyle: React.CSSProperties = { fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 4 }
+const labelStyle: React.CSSProperties = { fontSize: 11, color: '#757575', fontWeight: 700, marginBottom: 4 }
 const selectStyle: React.CSSProperties = { width: '100%', padding: '8px 10px', border: '1px solid #94a3b8', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', background: '#fff' }
 const inputStyle: React.CSSProperties = { width: '100%', padding: '8px 10px', border: '1px solid #94a3b8', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', background: '#fff' }
 const monthNavBtnStyle: React.CSSProperties = { border: '1px solid #94a3b8', background: '#f8fafc', cursor: 'pointer', borderRadius: 6, padding: '6px 14px', fontSize: 13, fontWeight: 700, color: '#475569' }

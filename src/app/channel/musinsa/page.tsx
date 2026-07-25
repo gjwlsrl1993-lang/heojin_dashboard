@@ -79,6 +79,7 @@ export default function MusinsaPage() {
   const [orderSeasonBySkuOption, setOrderSeasonBySkuOption] = useState<Map<string, string>>(new Map())
   const [orderSeasonByNameOption, setOrderSeasonByNameOption] = useState<Map<string, string>>(new Map())
   const [breakdown, setBreakdown] = useState<{ title: string; items: { label: string; value: number }[] } | null>(null)
+  const [expandedOrderRowId, setExpandedOrderRowId] = useState<string | number | null>(null) // 일별 주문표에서 날짜 클릭 시 주문번호를 펼쳐 보여줄 행
   const [editLineTarget, setEditLineTarget] = useState<any>(null)
   const [editLineForm, setEditLineForm] = useState({ item_name: '', style_no: '' })
   const [editLineSaving, setEditLineSaving] = useState(false)
@@ -745,7 +746,7 @@ export default function MusinsaPage() {
   // 무신사 "정산내역-상세" 파일은 진짜 엑셀이 아니라 HTML 표를 xls 확장자로 감싼 형태
   // 헤더 중 "반영금액"이 여러 번 중복돼서 이름으로는 못 찾으므로, 컬럼 위치(문자)로 직접 읽음
   const COL = {
-    CATEGORY: 0, DATE: 1, ITEM_NAME: 7, OPTION: 8, STYLE_NO: 9, QTY: 17,
+    CATEGORY: 0, DATE: 1, ORDER_NO: 2, ORDER_LINE_NO: 3, ITEM_NAME: 7, OPTION: 8, STYLE_NO: 9, QTY: 17,
     SALE_AMOUNT: 18, CLAIM: 19,
     DISCOUNT: 21, MUSINSA_COUPON: 22, REWARD_POINTS: 23, MUSINSA_CART_COUPON: 25,
     VENDOR_COUPON: 29, CART_VENDOR_COUPON: 30,
@@ -758,7 +759,7 @@ export default function MusinsaPage() {
   // 0행이 바로 헤더이고, 상품명이 없는 행은 "총합계" 또는 "반품배송비/청구반품비/저단가배송비지원액/후기부스팅/배송비결제" 같은
   // 날짜 없는 기간 요약 행 (정산금액(AV, 페널티차감)열을 그대로 신뢰해서 씀 — 무신사가 이미 최종 계산해서 준 값)
   const COL2 = {
-    CATEGORY: 0, DATE: 1, ITEM_NAME: 7, OPTION: 8, STYLE_NO: 9, QTY: 16,
+    CATEGORY: 0, DATE: 1, ORDER_NO: 2, ORDER_LINE_NO: 3, ITEM_NAME: 7, OPTION: 8, STYLE_NO: 9, QTY: 16,
     SALE_AMOUNT: 17, CLAIM: 18, DISCOUNT: 19, MUSINSA_COUPON: 20, MUSINSA_CART_COUPON: 21,
     VENDOR_COUPON: 23, CART_VENDOR_COUPON: 25, REWARD_POINTS: 27,
     COMMISSION_SALE: 40, PENALTY: 44, CLAIM_SHIPPING_FEE: 45, REVIEW_BOOST: 46,
@@ -946,6 +947,8 @@ export default function MusinsaPage() {
         const styleNo = (cells[COL.STYLE_NO] || '').trim()
         const itemName = (cells[COL.ITEM_NAME] || '').trim()
         const optionName = (cells[COL.OPTION] || '').trim()
+        const orderNo = (cells[COL.ORDER_NO] || '').trim()
+        const orderLineNo = (cells[COL.ORDER_LINE_NO] || '').trim()
         const matched = matchItem(styleNo, itemName, optionName)
         const lineCost = matched ? (matched.cost_price || 0) * qty : 0
         const registeredSellPrice = matched ? (matched.sell_price || 0) : 0
@@ -967,6 +970,8 @@ export default function MusinsaPage() {
           channel: CHANNEL_NAME,
           settle_date: dateStr,
           order_type: category,
+          order_no: orderNo,
+          order_line_no: orderLineNo,
           item_name: itemName,
           style_no: styleNo,
           option_name: optionName,
@@ -1051,6 +1056,8 @@ export default function MusinsaPage() {
 
           const styleNo = (cells[COL2.STYLE_NO] || '').trim()
           const optionName = (cells[COL2.OPTION] || '').trim()
+          const orderNo = (cells[COL2.ORDER_NO] || '').trim()
+          const orderLineNo = (cells[COL2.ORDER_LINE_NO] || '').trim()
           const matched = matchItem(styleNo, itemName, optionName)
           const lineCost = matched ? (matched.cost_price || 0) * qty : 0
           const registeredSellPrice = matched ? (matched.sell_price || 0) : 0
@@ -1073,6 +1080,8 @@ export default function MusinsaPage() {
             channel: CHANNEL_NAME,
             settle_date: dateStr,
             order_type: category,
+            order_no: orderNo,
+            order_line_no: orderLineNo,
             item_name: itemName,
             style_no: styleNo,
             option_name: optionName,
@@ -1624,19 +1633,22 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
                     <span style={{ fontSize: 18 }}>🤖</span>
                     <div style={{ fontWeight: 800, fontSize: 16 }}>AI 추천 인사이트</div>
                   </div>
-                  <span style={{ fontSize: 13, color: '#94a3b8', transform: insightsCollapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 0.15s' }}>▼</span>
+                  <span style={{ fontSize: 13, color: '#757575', transform: insightsCollapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 0.15s' }}>▼</span>
                 </div>
                 {!insightsCollapsed && (
                   <>
-                    <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 18 }}>
-                      {year}년 {viewMonthIdx + 1}월 기준 데이터를 바탕으로 자동 생성된 참고용 피드백이에요 (정확한 판단은 실제 데이터를 함께 확인해주세요)
+                    <div style={{ fontSize: 12, color: '#757575', marginBottom: 4 }}>
+                      {year}년 {viewMonthIdx + 1}월 기준 데이터를 바탕으로 자동 생성된 참고용 피드백이에요.
+                    </div>
+                    <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 18 }}>
+                      ANTHROPIC_API_KEY 설정 필요 &gt; gemini, claude
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 16 }}>
                       {groups.map(g => (
                         <div key={g.title} style={{ background: '#fff', borderRadius: 12, padding: 16 }}>
                           <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10, color: g.color }}>{g.title}</div>
                           {g.items.length === 0 ? (
-                            <div style={{ fontSize: 12, color: '#94a3b8' }}>아직 참고할 만한 데이터가 부족해요.</div>
+                            <div style={{ fontSize: 12, color: '#757575' }}>아직 참고할 만한 데이터가 부족해요.</div>
                           ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                               {g.items.map((text, i) => (
@@ -1650,28 +1662,6 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
                         </div>
                       ))}
                     </div>
-                    <div style={{ borderTop: '1px solid #f1f5f9', margin: '12px 0' }} />
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
-                      <span style={{ fontWeight: 700, fontSize: 13, color: '#4f46e5' }}>🤖 Claude AI 분석</span>
-                      <button
-                        onClick={runClaudeAI}
-                        disabled={claudeLoading}
-                        style={{ border: '1px solid #4f46e5', background: claudeLoading ? '#f8fafc' : '#4f46e5', color: claudeLoading ? '#94a3b8' : '#fff', cursor: claudeLoading ? 'default' : 'pointer', fontSize: 12, fontWeight: 700, padding: '6px 12px', borderRadius: 8 }}
-                      >
-                        {claudeLoading ? '분석 중...' : 'Claude 분석 보기'}
-                      </button>
-                    </div>
-                    <div style={{ background: '#fff', borderRadius: 12, padding: 16 }}>
-                      {!claudeLoading && !claudeResult && (
-                        <div style={{ fontSize: 12, color: '#94a3b8' }}>버튼을 누르면 Claude가 실제로 데이터를 분석합니다.</div>
-                      )}
-                      {claudeLoading && (
-                        <div style={{ fontSize: 12, color: '#94a3b8' }}>Claude가 데이터를 분석하고 있어요...</div>
-                      )}
-                      {!claudeLoading && claudeResult && (
-                        <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.7, fontSize: 13, color: '#374151' }}>{claudeResult}</div>
-                      )}
-                    </div>
                   </>
                 )}
               </div>
@@ -1679,11 +1669,6 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
           })()}
 
           {/* 연간 KPI + 광고 성과 지표 (1:1:1:3) */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-            <button onClick={() => setYear(y => y - 1)} style={monthNavBtnStyle}>◀</button>
-            <span style={{ fontSize: 13, fontWeight: 700, color: '#94a3b8' }}>{year}년</span>
-            <button onClick={() => setYear(y => y + 1)} style={monthNavBtnStyle}>▶</button>
-          </div>
           <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 16, marginBottom: 20, minWidth: 0 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, minWidth: 0 }}>
             <div style={{ background: '#fff', border: '1px solid #94a3b8', borderRadius: 16, padding: 20, minWidth: 0 }}>
@@ -1712,13 +1697,13 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
                   </span>
                 )}
               </div>
-              <div style={{ fontSize: 12, color: '#94a3b8' }}>
+              <div style={{ fontSize: 12, color: '#757575' }}>
                 {salesGross > 0 ? '결제 완료 총액 (GROSS)' : (totalGross > 0 ? '정산내역 기준 (판매금액)' : '결제 완료 총액 (GROSS)')}
               </div>
-              <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>{year - 1}년 매출액 {formatWon(prevYearGrossTotal)}</div>
+              <div style={{ fontSize: 10, color: '#757575', marginTop: 2 }}>{year - 1}년 매출액 {formatWon(prevYearGrossTotal)}</div>
               {hasSettlementData && (
                 <div style={{ fontSize: 11, color: '#64748b', fontWeight: 700, marginTop: 2 }}>
-                  {yearNetQty}개 <span style={{ fontWeight: 500, color: '#94a3b8' }}>(판매{yearQtySale}/환불{yearQtyRefund})</span>
+                  {yearNetQty}개 <span style={{ fontWeight: 500, color: '#757575' }}>(판매{yearQtySale}/환불{yearQtyRefund})</span>
                 </div>
               )}
             </div>
@@ -1742,13 +1727,13 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
                 <span style={{ fontSize: 12, color: '#e11d48', fontWeight: 700 }}>- {formatWon(totalGross - totalNetActual)}</span>
-                <span style={{ fontSize: 11, color: '#94a3b8' }}>
+                <span style={{ fontSize: 11, color: '#757575' }}>
                   {hasSettlementData ? '총수수료' : `수수료 (${(feeRate*100).toFixed(0)}%${discountApplied ? ', 할인적용' : ''}, 추정)`}
                 </span>
               </div>
-              <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4 }}>{year - 1}년 순매출액 {formatWon(prevYearNetTotal)}</div>
+              <div style={{ fontSize: 10, color: '#757575', marginTop: 4 }}>{year - 1}년 순매출액 {formatWon(prevYearNetTotal)}</div>
               {hasSettlementData && yearClaim > 0 && (
-                <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4 }}>환불/교환 {formatWon(yearClaim)}</div>
+                <div style={{ fontSize: 10, color: '#757575', marginTop: 4 }}>환불/교환 {formatWon(yearClaim)}</div>
               )}
             </div>
             <div style={{ background: totalProfit >= 0 ? '#f0fdf4' : '#fff1f2', border: '1px solid #94a3b8', borderRadius: 16, padding: 20, minWidth: 0 }}>
@@ -1771,9 +1756,9 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
                 <span style={{ fontSize: 12, color: '#64748b', fontWeight: 700 }}>- {formatWon(totalCostActual)}</span>
-                <span style={{ fontSize: 11, color: '#94a3b8' }}>{hasSettlementData ? '원가+택배비' : '원가합계'}</span>
+                <span style={{ fontSize: 11, color: '#757575' }}>{hasSettlementData ? '원가+택배비' : '원가합계'}</span>
               </div>
-              <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4 }}>
+              <div style={{ fontSize: 10, color: '#757575', marginTop: 4 }}>
                 {year - 1}년 순수익 {formatWon(prevYearProfitTotal)}
                 {profitYoyPct !== null && (
                   <span style={{ fontWeight: 700, color: profitYoyPct >= 0 ? '#059669' : '#e11d48' }}>
@@ -1782,10 +1767,10 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
                 )}
               </div>
               {hasSettlementData && (
-                <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4 }}>원가 {formatWon(yearSettleCost)} · 택배비 {formatWon(yearSettleShipping)}{yearAdCharge > 0 ? ` · 충전 광고비 ${formatWon(yearAdCharge)}` : ''}</div>
+                <div style={{ fontSize: 10, color: '#757575', marginTop: 4 }}>원가 {formatWon(yearSettleCost)} · 택배비 {formatWon(yearSettleShipping)}{yearAdCharge > 0 ? ` · 충전 광고비 ${formatWon(yearAdCharge)}` : ''}</div>
               )}
               {hasSettlementData && (
-                <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4 }}>
+                <div style={{ fontSize: 10, color: '#757575', marginTop: 4 }}>
                   원가 {costPctOfGross}% · 택배비 {shippingPctOfGross}% · 광고비 {adChargePctOfGross}% · 수수료 {feePctOfGross}%
                 </div>
               )}
@@ -1793,43 +1778,50 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
             </div>
             </div>
             <div style={{ background: '#fff', border: '1px solid #94a3b8', borderRadius: 16, padding: 20, minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
-                <span style={{ fontSize: 13, color: '#94a3b8', fontWeight: 700 }}>광고 성과 지표</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: '#475569' }}>광고비 {formatWon(yearAdCost)}</span>
-                  <span style={{ fontSize: 10, color: '#cbd5e1' }}>→</span>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: '#4f46e5' }}>전환매출 {formatWon(yearAdRevenue)}</span>
-                  {yearAdCharge > 0 && (
-                    <span style={{ fontSize: 11, fontWeight: 700, color: '#e11d48' }}>· 충전 광고비 {formatWon(yearAdCharge)}</span>
-                  )}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                <span style={{ fontSize: 13, color: '#757575', fontWeight: 700 }}>광고 성과 지표</span>
+                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                  <button onClick={openDailyModal}
+                    style={{ border: '1px solid #94a3b8', background: '#fff', color: '#475569', cursor: 'pointer', fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 6 }}>
+                    📅 일별 광고표
+                  </button>
+                  <input ref={adFileRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }}
+                    onChange={e => { const f = e.target.files?.[0]; if (f) handleAdExcelUpload(f) }} />
+                  <button onClick={() => adFileRef.current?.click()} disabled={adUploading}
+                    style={{ border: '1px solid #94a3b8', background: '#fff', color: '#2563eb', cursor: 'pointer', fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 6 }}>
+                    {adUploading ? '업로드 중...' : '📤 업로드'}
+                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <button onClick={() => setYear(y => y - 1)} style={monthNavBtnStyle}>◀</button>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#757575' }}>{year}년</span>
+                    <button onClick={() => setYear(y => y + 1)} style={monthNavBtnStyle}>▶</button>
+                  </div>
                 </div>
-                <button onClick={openDailyModal}
-                  style={{ border: '1px solid #94a3b8', background: '#fff', color: '#475569', cursor: 'pointer', fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 6 }}>
-                  📅 일별 광고표
-                </button>
-                <input ref={adFileRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }}
-                  onChange={e => { const f = e.target.files?.[0]; if (f) handleAdExcelUpload(f) }} />
-                <button onClick={() => adFileRef.current?.click()} disabled={adUploading}
-                  style={{ border: '1px solid #94a3b8', background: '#fff', color: '#2563eb', cursor: 'pointer', fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 6 }}>
-                  {adUploading ? '업로드 중...' : '📤 업로드'}
-                </button>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: 8 }}>
                 <div style={{ textAlign: 'center', flex: 1 }}>
                   <div style={{ fontSize: 26, fontWeight: 800, color: '#4f46e5' }}>{yearRoas ? `${yearRoas}%` : '-'}</div>
-                  <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4, fontWeight: 700 }}>ROAS</div>
+                  <div style={{ fontSize: 12, color: '#757575', marginTop: 4, fontWeight: 700 }}>ROAS</div>
                   <div style={{ fontSize: 10, color: '#4f46e5', marginTop: 2, lineHeight: 1.3, fontWeight: 600 }}>광고비 대비 전환매출 비율<br/>(전환매출 ÷ 광고비 × 100).<br/>높을수록 광고 효율이 좋음</div>
                 </div>
                 <div style={{ textAlign: 'center', flex: 1 }}>
                   <div style={{ fontSize: 26, fontWeight: 800, color: '#e11d48' }}>{yearAcos ? `${yearAcos}%` : '-'}</div>
-                  <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4, fontWeight: 700 }}>ACOS</div>
+                  <div style={{ fontSize: 12, color: '#757575', marginTop: 4, fontWeight: 700 }}>ACOS</div>
                   <div style={{ fontSize: 10, color: '#e11d48', marginTop: 2, lineHeight: 1.3, fontWeight: 600 }}>전환매출 대비 광고비 비율<br/>(광고비 ÷ 전환매출 × 100).<br/>낮을수록 좋음</div>
                 </div>
                 <div style={{ textAlign: 'center', flex: 1 }}>
                   <div style={{ fontSize: 26, fontWeight: 800, color: '#d97706' }}>{yearTacos ? `${yearTacos}%` : '-'}</div>
-                  <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4, fontWeight: 700 }}>TACOS</div>
+                  <div style={{ fontSize: 12, color: '#757575', marginTop: 4, fontWeight: 700 }}>TACOS</div>
                   <div style={{ fontSize: 10, color: '#d97706', marginTop: 2, lineHeight: 1.3, fontWeight: 600 }}>전체 매출 대비 광고비 비율<br/>(광고비 ÷ 전체 매출 × 100).<br/>낮을수록 광고 의존도가 낮음</div>
                 </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, flexWrap: 'wrap', marginTop: 12 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#475569' }}>광고비 {formatWon(yearAdCost)}</span>
+                <span style={{ fontSize: 10, color: '#cbd5e1' }}>→</span>
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#4f46e5' }}>전환매출 {formatWon(yearAdRevenue)}</span>
+                {yearAdCharge > 0 && (
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#e11d48' }}>· 충전 광고비 {formatWon(yearAdCharge)}</span>
+                )}
               </div>
               <div style={{ fontSize: 9, color: '#16a34a', fontWeight: 700, marginTop: 10, textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 위험 : ROAS 400% 미만 (ACOS 25% 이상) / 적정 : ROAS 600% ~ 700% (ACOS 14% ~ 16%) / 대박 : ROAS 1,000% 이상 (ACOS 10% 이하)
@@ -1847,7 +1839,7 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
           <div style={{ background: '#fff', border: '1px solid #94a3b8', borderRadius: 16, padding: 20, marginBottom: 24 }}>
             <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginBottom: 16 }}>
               <button onClick={() => shiftViewMonth(-1)} style={monthNavBtnStyle}>◀</button>
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#94a3b8' }}>{year}년 {viewMonthIdx + 1}월</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#757575' }}>{year}년 {viewMonthIdx + 1}월</span>
               <button onClick={() => shiftViewMonth(1)} style={monthNavBtnStyle}>▶</button>
             </div>
 
@@ -1864,10 +1856,10 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
                     </span>
                   )}
                 </div>
-                <div style={{ fontSize: 9, color: '#94a3b8', marginTop: 3 }}>{year - 1}년 {viewMonthIdx + 1}월 {formatWon(mPrevYearGross)}</div>
+                <div style={{ fontSize: 9, color: '#757575', marginTop: 3 }}>{year - 1}년 {viewMonthIdx + 1}월 {formatWon(mPrevYearGross)}</div>
                 {hasSettlementData && (
                   <div style={{ fontSize: 10, color: '#64748b', fontWeight: 700, marginTop: 4 }}>
-                    {mNetQty}개 <span style={{ fontWeight: 500, color: '#94a3b8' }}>(판매{monthlyQtySale[viewMonthIdx]}/환불{monthlyQtyRefund[viewMonthIdx]})</span>
+                    {mNetQty}개 <span style={{ fontWeight: 500, color: '#757575' }}>(판매{monthlyQtySale[viewMonthIdx]}/환불{monthlyQtyRefund[viewMonthIdx]})</span>
                   </div>
                 )}
               </div>
@@ -1887,13 +1879,13 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
                   <span style={{ fontSize: 11, color: '#e11d48', fontWeight: 700 }}>- {formatWon(mFee)}</span>
-                  <span style={{ fontSize: 10, color: '#94a3b8' }}>
+                  <span style={{ fontSize: 10, color: '#757575' }}>
                     {hasSettlementData ? '총수수료' : `수수료 (${(feeRate*100).toFixed(0)}%, 추정)`}
                   </span>
                 </div>
-                <div style={{ fontSize: 9, color: '#94a3b8', marginTop: 3 }}>{year - 1}년 {viewMonthIdx + 1}월 {formatWon(mPrevYearNet)}</div>
+                <div style={{ fontSize: 9, color: '#757575', marginTop: 3 }}>{year - 1}년 {viewMonthIdx + 1}월 {formatWon(mPrevYearNet)}</div>
                 {hasSettlementData && mClaim > 0 && (
-                  <div style={{ fontSize: 9, color: '#94a3b8', marginTop: 3 }}>환불/교환 {formatWon(mClaim)}</div>
+                  <div style={{ fontSize: 9, color: '#757575', marginTop: 3 }}>환불/교환 {formatWon(mClaim)}</div>
                 )}
               </div>
               <div style={{ background: mProfit >= 0 ? '#f0fdf4' : '#fff1f2', borderRadius: 12, padding: 16 }}>
@@ -1917,16 +1909,16 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
                     </span>
                   )}
                 </div>
-                <div style={{ fontSize: 9, color: '#94a3b8', marginTop: 3 }}>{year - 1}년 {viewMonthIdx + 1}월 {formatWon(mPrevYearProfit)}</div>
+                <div style={{ fontSize: 9, color: '#757575', marginTop: 3 }}>{year - 1}년 {viewMonthIdx + 1}월 {formatWon(mPrevYearProfit)}</div>
                 {hasSettlementData && (
-                  <div style={{ fontSize: 9, color: '#94a3b8', marginTop: 3 }}>원가 {formatWon(mSettleCost)} · 택배비 {formatWon(mSettleShipping)}{mAdCharge > 0 ? ` · 충전 광고비 ${formatWon(mAdCharge)}` : ''}</div>
+                  <div style={{ fontSize: 9, color: '#757575', marginTop: 3 }}>원가 {formatWon(mSettleCost)} · 택배비 {formatWon(mSettleShipping)}{mAdCharge > 0 ? ` · 충전 광고비 ${formatWon(mAdCharge)}` : ''}</div>
                 )}
               </div>
               </div>
               <div style={{ background: '#f8fafc', borderRadius: 12, padding: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 6 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700 }}>광고 성과 지표</span>
+                    <span style={{ fontSize: 11, color: '#757575', fontWeight: 700 }}>광고 성과 지표</span>
                     <span style={{ fontSize: 10, fontWeight: 700, color: '#475569' }}>광고비 {formatWon(mAdCost)}</span>
                     <span style={{ fontSize: 10, color: '#cbd5e1' }}>→</span>
                     <span style={{ fontSize: 10, fontWeight: 700, color: '#4f46e5' }}>전환매출 {formatWon(mAdRevenue)}</span>
@@ -1946,15 +1938,15 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
                 <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: 8 }}>
                   <div style={{ textAlign: 'center', flex: 1 }}>
                     <div style={{ fontSize: 18, fontWeight: 800, color: '#4f46e5' }}>{mRoas ? `${mRoas}%` : '-'}</div>
-                    <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2, fontWeight: 700 }}>ROAS</div>
+                    <div style={{ fontSize: 11, color: '#757575', marginTop: 2, fontWeight: 700 }}>ROAS</div>
                   </div>
                   <div style={{ textAlign: 'center', flex: 1 }}>
                     <div style={{ fontSize: 18, fontWeight: 800, color: '#e11d48' }}>{mAcos ? `${mAcos}%` : '-'}</div>
-                    <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2, fontWeight: 700 }}>ACOS</div>
+                    <div style={{ fontSize: 11, color: '#757575', marginTop: 2, fontWeight: 700 }}>ACOS</div>
                   </div>
                   <div style={{ textAlign: 'center', flex: 1 }}>
                     <div style={{ fontSize: 18, fontWeight: 800, color: '#d97706' }}>{mTacos ? `${mTacos}%` : '-'}</div>
-                    <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2, fontWeight: 700 }}>TACOS</div>
+                    <div style={{ fontSize: 11, color: '#757575', marginTop: 2, fontWeight: 700 }}>TACOS</div>
                   </div>
                 </div>
               </div>
@@ -1964,11 +1956,11 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
               <div style={{ fontWeight: 700, fontSize: 15 }}>{chartYear}년 월별 매출 / 판매수량</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <button onClick={() => shiftChartYear(-1)} style={monthNavBtnStyle}>◀</button>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#94a3b8' }}>{chartYear}년</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#757575' }}>{chartYear}년</span>
                 <button onClick={() => shiftChartYear(1)} style={monthNavBtnStyle}>▶</button>
               </div>
             </div>
-            <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 16 }}>
+            <div style={{ fontSize: 12, color: '#757575', marginBottom: 16 }}>
               매출액 · 순매출액 {chartHasPrevYearData ? `· ${chartYear - 1}년 순매출액(비교)` : ''}
             </div>
             {chartLoading ? <div className="loading">로딩 중...</div> : !chartHasData ? (
@@ -2022,7 +2014,7 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
             )}
 
             <div style={{ fontWeight: 700, fontSize: 15, marginTop: 24, marginBottom: 4 }}>{chartYear}년 월별 판매수량</div>
-            <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 16 }}>순수 판매 건수 · 전년동월 판매건수 비교</div>
+            <div style={{ fontSize: 12, color: '#757575', marginBottom: 16 }}>순수 판매 건수 · 전년동월 판매건수 비교</div>
             {!chartLoading && chartHasData && (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={qtyChartData} margin={{ top: 20, right: 10, left: 0, bottom: 0 }}>
@@ -2071,7 +2063,7 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
                   </button>
                 </div>
               </div>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 16 }}>
+              <div style={{ fontSize: 12, color: '#757575', marginBottom: 16 }}>
                 판매 수량 기준 (정산내역 기준, {bestCatYearFilter === '전체' ? '전체 기간' : `${bestCatYearFilter}년`}){showByOption ? ' · 옵션별' : ' · 옵션 제외, 아이템당 합계'} · 스크롤로 전체 확인{bestCatLoading ? ' · 불러오는 중...' : ''}
               </div>
               {(() => {
@@ -2097,7 +2089,7 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
                       <thead>
                         <tr style={{ background: '#f8fafc' }}>
                           {(showByOption ? ['순위', '상품명', '스타일넘버', '옵션', '판매량', '매출', '순매출', '순수익'] : ['순위', '상품명', '스타일넘버', '판매량', '매출', '순매출', '순수익']).map(h => (
-                            <th key={h} style={{ padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid #94a3b8', fontSize: 11, color: '#94a3b8', fontWeight: 700, position: 'sticky', top: 0, background: '#f8fafc' }}>{h}</th>
+                            <th key={h} style={{ padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid #94a3b8', fontSize: 11, color: '#757575', fontWeight: 700, position: 'sticky', top: 0, background: '#f8fafc' }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -2145,7 +2137,7 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
                   ))}
                 </select>
               </div>
-              <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 16 }}>{bestCatYearFilter === '전체' ? '전체 기간' : `${bestCatYearFilter}년`} 순수 판매 건 기준, 재고 카테고리와 매칭{bestCatLoading ? ' · 불러오는 중...' : ''}</div>
+              <div style={{ fontSize: 12, color: '#757575', marginBottom: 16 }}>{bestCatYearFilter === '전체' ? '전체 기간' : `${bestCatYearFilter}년`} 순수 판매 건 기준, 재고 카테고리와 매칭{bestCatLoading ? ' · 불러오는 중...' : ''}</div>
               {categorySales.length === 0 ? (
                 <div className="chart-empty" style={{ height: 120 }}>정산내역을 먼저 업로드해주세요</div>
               ) : (
@@ -2185,7 +2177,7 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
               <div style={{ fontWeight: 700, fontSize: 16 }}>무신사 일별 광고표</div>
               <button onClick={() => setShowDailyModal(false)}
-                style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 20, color: '#94a3b8', lineHeight: 1 }}>×</button>
+                style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 20, color: '#757575', lineHeight: 1 }}>×</button>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, marginBottom: 16 }}>
@@ -2204,7 +2196,7 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
                   <thead>
                     <tr style={{ background: '#f8fafc' }}>
                       {['날짜', '집행광고비', '광고수익률', '직접광고수익률', '직접전환매출(판매수)', '간접광고수익률', '간접전환매출(판매수)', '클릭수', '클릭당광고비', '클릭률', 'CPM', '매출', '전환율'].map(h => (
-                        <th key={h} style={{ padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid #94a3b8', color: '#94a3b8', fontWeight: 700 }}>{h}</th>
+                        <th key={h} style={{ padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid #94a3b8', color: '#757575', fontWeight: 700 }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -2247,7 +2239,7 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
                   🗑 이 달({orderYear}.{orderMonthIdx + 1}) 전체 삭제
                 </button>
                 <button onClick={() => setShowOrderModal(false)}
-                  style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 20, color: '#94a3b8', lineHeight: 1 }}>×</button>
+                  style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 20, color: '#757575', lineHeight: 1 }}>×</button>
               </div>
             </div>
 
@@ -2257,8 +2249,8 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
               <button onClick={() => shiftOrderMonth(1)} style={monthNavBtnStyle}>▶</button>
             </div>
 
-            <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 8, textAlign: 'center' }}>
-              [무신사할인] [브랜드할인] [수수료] 칸의 금액을 클릭하면 세부 내역이 뜹니다
+            <div style={{ fontSize: 11, color: '#757575', marginBottom: 8, textAlign: 'center' }}>
+              [무신사할인] [브랜드할인] [수수료] 칸의 금액을 클릭하면 세부 내역이 뜹니다 · [날짜]를 클릭하면 주문번호가 표시됩니다
             </div>
 
             {orderLoading ? (
@@ -2289,7 +2281,7 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
                   <thead>
                     <tr style={{ background: '#f8fafc' }}>
                       {['날짜', '시즌', '구분', '아이템명', '스타일넘버', '옵션', '수량', '판매가', '할인율', '판매금액', '클레임내역', '무신사할인', '브랜드할인', '수수료', '매출액', '총수수료', '정산금액'].map(h => (
-                        <th key={h} style={{ padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid #94a3b8', color: '#94a3b8', fontWeight: 700 }}>{h}</th>
+                        <th key={h} style={{ padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid #94a3b8', color: '#757575', fontWeight: 700 }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -2313,9 +2305,20 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
                       const skuKey = r.style_no ? `${normalizeSkuForMatch(r.style_no)}__${rowOptKey}` : ''
                       const nameKey = `${String(r.item_name || '').trim().toUpperCase()}__${rowOptKey}`
                       const seasonLabel = (skuKey && orderSeasonBySkuOption.get(skuKey)) || orderSeasonByNameOption.get(nameKey) || '미지정'
+                      const isOrderExpanded = expandedOrderRowId === r.id
                       return (
                         <tr key={r.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                          <td style={{ padding: '8px 10px', textAlign: 'center' }}>{r.settle_date}</td>
+                          <td style={{ padding: '8px 10px', textAlign: 'center', cursor: 'pointer' }}
+                            onClick={() => setExpandedOrderRowId(v => v === r.id ? null : r.id)}
+                            title="클릭하면 주문번호가 표시됩니다">
+                            {r.settle_date}
+                            {isOrderExpanded && (
+                              <div style={{ marginTop: 4, fontSize: 10, color: '#4f46e5', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                {r.order_no ? `주문 ${r.order_no}` : '주문번호 없음'}
+                                {r.order_line_no ? ` · ${r.order_line_no}` : ''}
+                              </div>
+                            )}
+                          </td>
                           <td style={{ padding: '8px 10px', textAlign: 'center', color: '#64748b' }}>{seasonLabel}</td>
                           <td style={{ padding: '8px 10px', textAlign: 'center' }}>
                             <span style={{
@@ -2410,7 +2413,7 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
                       return (
                         <>
                           <tr>
-                            <td colSpan={17} style={{ padding: '8px 10px 2px', fontSize: 11, color: '#94a3b8', fontWeight: 700 }}>
+                            <td colSpan={17} style={{ padding: '8px 10px 2px', fontSize: 11, color: '#757575', fontWeight: 700 }}>
                               날짜 없는 기간 요약 항목 (총수수료에 포함됨)
                             </td>
                           </tr>
@@ -2449,9 +2452,9 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
               <div style={{ fontWeight: 700, fontSize: 16 }}>아이템별 원가 확인</div>
               <button onClick={() => setShowCostModal(false)}
-                style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 20, color: '#94a3b8', lineHeight: 1 }}>×</button>
+                style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 20, color: '#757575', lineHeight: 1 }}>×</button>
             </div>
-            <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 16 }}>
+            <div style={{ fontSize: 12, color: '#757575', marginBottom: 16 }}>
               {costModalScope} · 일별 주문표와 같은 데이터를 기준으로 집계돼서 두 팝업 숫자는 항상 일치해요
             </div>
 
@@ -2464,7 +2467,7 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
                 <thead>
                   <tr style={{ background: '#f8fafc' }}>
                     {['상품명', '스타일넘버', '옵션', '수량', '매칭 원가', '매칭 상태'].map(h => (
-                      <th key={h} style={{ padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid #94a3b8', color: '#94a3b8', fontWeight: 700 }}>{h}</th>
+                      <th key={h} style={{ padding: '8px 10px', textAlign: 'center', borderBottom: '1px solid #94a3b8', color: '#757575', fontWeight: 700 }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -2499,19 +2502,19 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
             onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
               <div style={{ fontWeight: 700, fontSize: 14 }}>아이템명 / 스타일넘버 수정</div>
-              <button onClick={() => setEditLineTarget(null)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, color: '#94a3b8', lineHeight: 1 }}>×</button>
+              <button onClick={() => setEditLineTarget(null)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, color: '#757575', lineHeight: 1 }}>×</button>
             </div>
-            <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 12 }}>
+            <div style={{ fontSize: 11, color: '#757575', marginBottom: 12 }}>
               대소문자·띄어쓰기 차이로 재고와 매칭이 안 될 때 여기서 고치면, 저장 즉시 재고와 다시 매칭해서 원가·판매가도 같이 갱신돼요.<br/>
               (날짜: {editLineTarget.settle_date} / 옵션: {editLineTarget.option_name || '-'})
             </div>
             <div style={{ marginBottom: 10 }}>
-              <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 4 }}>아이템명</div>
+              <div style={{ fontSize: 11, color: '#757575', fontWeight: 700, marginBottom: 4 }}>아이템명</div>
               <input value={editLineForm.item_name} onChange={e => setEditLineForm(v => ({ ...v, item_name: e.target.value }))}
                 style={{ width: '100%', padding: '8px 10px', border: '1px solid #94a3b8', borderRadius: 8, fontSize: 13, fontFamily: 'inherit' }} />
             </div>
             <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 4 }}>스타일넘버</div>
+              <div style={{ fontSize: 11, color: '#757575', fontWeight: 700, marginBottom: 4 }}>스타일넘버</div>
               <input value={editLineForm.style_no} onChange={e => setEditLineForm(v => ({ ...v, style_no: e.target.value }))}
                 style={{ width: '100%', padding: '8px 10px', border: '1px solid #94a3b8', borderRadius: 8, fontSize: 13, fontFamily: 'monospace' }} />
             </div>
@@ -2534,7 +2537,7 @@ ${bulletLines || '(아직 참고할 만한 규칙 기반 인사이트가 없음)
             onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
               <div style={{ fontWeight: 700, fontSize: 14 }}>{breakdown.title}</div>
-              <button onClick={() => setBreakdown(null)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, color: '#94a3b8', lineHeight: 1 }}>×</button>
+              <button onClick={() => setBreakdown(null)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, color: '#757575', lineHeight: 1 }}>×</button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {breakdown.items.map((it, i) => (
