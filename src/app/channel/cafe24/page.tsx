@@ -941,7 +941,7 @@ export default function Cafe24Page() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis dataKey="name" tick={{ fontSize: 13 }} />
                   <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip formatter={(v: number) => `${v}건`} />
+                  <Tooltip formatter={(v: any) => `${v}건`} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
                   <Bar dataKey="판매수량" fill="#f59e0b" radius={[4, 4, 0, 0]}>
                     <LabelList dataKey="판매수량" position="top" formatter={(v: number) => v ? `${v}건` : ''} style={{ fontSize: 9, fill: '#f59e0b', fontWeight: 700 }} />
