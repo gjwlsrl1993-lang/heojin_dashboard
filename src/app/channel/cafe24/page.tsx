@@ -944,11 +944,11 @@ export default function Cafe24Page() {
                   <Tooltip formatter={(v: any) => `${v}건`} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
                   <Bar dataKey="판매수량" fill="#f59e0b" radius={[4, 4, 0, 0]}>
-                    <LabelList dataKey="판매수량" position="top" formatter={(v: number) => v ? `${v}건` : ''} style={{ fontSize: 9, fill: '#f59e0b', fontWeight: 700 }} />
+                    <LabelList dataKey="판매수량" position="top" formatter={(v: any) => v ? `${v}건` : ''} style={{ fontSize: 9, fill: '#f59e0b', fontWeight: 700 }} />
                   </Bar>
                   {chartHasPrevYearData && (
                     <Bar dataKey="작년판매수량" fill="#94a3b8" radius={[4, 4, 0, 0]}>
-                      <LabelList dataKey="작년판매수량" position="top" formatter={(v: number) => v ? `${v}건` : ''} style={{ fontSize: 9, fill: '#64748b', fontWeight: 700 }} />
+                      <LabelList dataKey="작년판매수량" position="top" formatter={(v: any) => v ? `${v}건` : ''} style={{ fontSize: 9, fill: '#64748b', fontWeight: 700 }} />
                     </Bar>
                   )}
                 </BarChart>
