@@ -2141,17 +2141,17 @@ export default function MusinsaPage() {
               <BarChart data={monthlyChartData} margin={{ top: 20, right: 10, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis dataKey="name" tick={{ fontSize: 14 }} />
-                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${Math.round(v / 10000)}만`} />
-                <Tooltip formatter={(v: number) => formatWon(v)} />
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: any) => `${Math.round(v / 10000)}만`} />
+                <Tooltip formatter={(v: any) => formatWon(v)} />
                 <Bar dataKey="매출" fill="#3b82f6" radius={[4, 4, 0, 0]}>
                   <LabelList dataKey="매출" content={renderRevenueLabel} />
                 </Bar>
                 <Bar dataKey="순매출액" fill="#059669" radius={[4, 4, 0, 0]}>
-                  <LabelList dataKey="순매출액" position="top" formatter={(v: number) => v ? v.toLocaleString('ko-KR') : ''} style={{ fontSize: 8, fill: '#059669', fontWeight: 700 }} />
+                  <LabelList dataKey="순매출액" position="top" formatter={(v: any) => v ? v.toLocaleString('ko-KR') : ''} style={{ fontSize: 8, fill: '#059669', fontWeight: 700 }} />
                 </Bar>
                 {chartHasPrevYearData && (
                   <Bar dataKey="작년순매출액" fill="#475569" radius={[4, 4, 0, 0]}>
-                    <LabelList dataKey="작년순매출액" position="top" formatter={(v: number) => v ? v.toLocaleString('ko-KR') : ''} style={{ fontSize: 8, fill: '#475569', fontWeight: 700 }} />
+                    <LabelList dataKey="작년순매출액" position="top" formatter={(v: any) => v ? v.toLocaleString('ko-KR') : ''} style={{ fontSize: 8, fill: '#475569', fontWeight: 700 }} />
                   </Bar>
                 )}
               </BarChart>
@@ -2191,14 +2191,14 @@ export default function MusinsaPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                 <XAxis dataKey="name" tick={{ fontSize: 14 }} />
                 <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip formatter={(v: number) => `${v}개`} />
+                <Tooltip formatter={(v: any) => `${v}개`} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
                 <Bar dataKey="판매수량" fill="#f59e0b" radius={[4, 4, 0, 0]}>
-                  <LabelList dataKey="판매수량" position="top" formatter={(v: number) => v ? `${v}개` : ''} style={{ fontSize: 9, fill: '#f59e0b', fontWeight: 700 }} />
+                  <LabelList dataKey="판매수량" position="top" formatter={(v: any) => v ? `${v}개` : ''} style={{ fontSize: 9, fill: '#f59e0b', fontWeight: 700 }} />
                 </Bar>
                 {chartHasPrevYearData && (
                   <Bar dataKey="작년판매수량" fill="#94a3b8" radius={[4, 4, 0, 0]}>
-                    <LabelList dataKey="작년판매수량" position="top" formatter={(v: number) => v ? `${v}개` : ''} style={{ fontSize: 9, fill: '#64748b', fontWeight: 700 }} />
+                    <LabelList dataKey="작년판매수량" position="top" formatter={(v: any) => v ? `${v}개` : ''} style={{ fontSize: 9, fill: '#64748b', fontWeight: 700 }} />
                   </Bar>
                 )}
               </BarChart>
@@ -2325,9 +2325,9 @@ export default function MusinsaPage() {
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                       <XAxis type="number" tick={{ fontSize: 11 }} />
                       <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={70} />
-                      <Tooltip formatter={(v: number) => `${v}개`} />
+                      <Tooltip formatter={(v: any) => `${v}개`} />
                       <Bar dataKey="판매량" fill="#8b5cf6" radius={[0, 4, 4, 0]}>
-                        <LabelList dataKey="판매량" position="right" formatter={(v: number) => v ? `${v}개` : ''} style={{ fontSize: 11, fill: '#8b5cf6', fontWeight: 700 }} />
+                        <LabelList dataKey="판매량" position="right" formatter={(v: any) => v ? `${v}개` : ''} style={{ fontSize: 11, fill: '#8b5cf6', fontWeight: 700 }} />
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
