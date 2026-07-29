@@ -142,6 +142,41 @@ export default function MusinsaPage() {
     return { totalCommission, settlementAmount }
   }
 
+  // 환불행 판정용 키 만들기 — 주문일련번호(상품 줄 단위 고유)를 우선 쓰고,
+  // 일련번호가 없으면 주문번호+스타일넘버+옵션 조합으로 대체
+  function saleLineKeysOf(row: any): string[] {
+    const keys: string[] = []
+    const serial = (row.order_serial || '').trim()
+    if (serial) keys.push(`S:${serial}`)
+    const orderNo = (row.order_no || '').trim()
+    if (orderNo) keys.push(`O:${orderNo}__${normalizeSkuForMatch(row.style_no)}__${normalizeOptionForMatch(row.option_name)}`)
+    return keys
+  }
+
+  // 전체 기간의 "판매" 건 키 집합 (환불을 -1로 차감할지 0으로 둘지 판단용)
+  // Supabase 기본 1000행 제한을 넘지 않도록 페이지 단위로 끝까지 읽어옴
+  async function loadSaleLineKeys(): Promise<Set<string>> {
+    const keys = new Set<string>()
+    const PAGE = 1000
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await supabase
+        .from('musinsa_settlement_lines')
+        .select('order_no, order_serial, style_no, option_name')
+        .eq('channel', CHANNEL_NAME)
+        .eq('order_type', '판매')
+        .range(from, from + PAGE - 1)
+      if (error || !data || data.length === 0) break
+      data.forEach((r: any) => saleLineKeysOf(r).forEach(k => keys.add(k)))
+      if (data.length < PAGE) break
+    }
+    return keys
+  }
+
+  // 이 환불행에 대응되는 "판매" 건이 실제로 데이터에 있는지
+  function refundHasMatchingSale(row: any, saleKeys: Set<string>): boolean {
+    return saleLineKeysOf(row).some(k => saleKeys.has(k))
+  }
+
   // 옵션명 매칭용 정규화: 대소문자 무관 + "NONE"/"FREE"/"F"/빈값을 전부 "옵션 없음"으로 동일 취급
   // (재고 테이블엔 "F"로 짧게 저장된 경우가 있고, 정산내역엔 "NONE"으로 찍히는 등 표기가 제각각이라서)
   function normalizeOptionForMatch(opt: any): string {
@@ -449,14 +484,9 @@ export default function MusinsaPage() {
     }
     const { data: rows } = await query
 
-    // 환불 건을 차감할지 판단하기 위해, 전체 기간의 "판매" 주문번호 목록을 미리 모아둠
+    // 환불 건을 차감할지 판단하기 위해, 전체 기간의 "판매" 건 키를 미리 모아둠
     // (환불의 원래 판매분이 다른 연도/월에 있을 수 있어서 연도 필터와 무관하게 전체를 조회)
-    const { data: saleOrderRows } = await supabase
-      .from('musinsa_settlement_lines')
-      .select('order_no')
-      .eq('channel', CHANNEL_NAME)
-      .eq('order_type', '판매')
-    const saleOrderNos = new Set((saleOrderRows || []).map((r: any) => (r.order_no || '').trim()).filter(Boolean))
+    const saleLineKeys = await loadSaleLineKeys()
 
     // 재고와 매칭할 카테고리·시즌 정보 조회
     const { data: catItems } = await supabase.from('items').select('sku, name, option_name, category, season')
@@ -487,7 +517,7 @@ export default function MusinsaPage() {
       // 파일에 수량이 0으로 찍힌 환불행은 일별 주문표와 똑같이 1개로 추정
       const isRefund = orderType.includes('반품') || orderType.includes('환불')
       const rawQty = row.qty || 0
-      const hasMatchingSale = isRefund && saleOrderNos.has((row.order_no || '').trim())
+      const hasMatchingSale = isRefund && refundHasMatchingSale(row, saleLineKeys)
       const signedQty = isRefund ? (hasMatchingSale ? -(rawQty > 0 ? rawQty : 1) : 0) : rawQty
 
       const { settlementAmount } = computeCommissionAndSettlement(row)
@@ -665,13 +695,10 @@ export default function MusinsaPage() {
     setOrderSeasonBySkuOption(bySkuOption)
     setOrderSeasonByNameOption(byNameOption)
 
-    // 환불행을 -1로 볼지 0으로 볼지 판단용 — 전체 기간의 "판매" 주문번호 목록
-    const { data: saleOrderRows } = await supabase
-      .from('musinsa_settlement_lines')
-      .select('order_no')
-      .eq('channel', CHANNEL_NAME)
-      .eq('order_type', '판매')
-    setOrderSaleOrderNos(new Set((saleOrderRows || []).map((r: any) => (r.order_no || '').trim()).filter(Boolean)))
+    // 환불행을 -1로 볼지 0으로 볼지 판단용 — 전체 기간의 "판매" 건 키 목록
+    // 주문번호는 주문 단위(한 주문에 여러 상품 가능)라 상품 줄 단위로 고유한 "주문일련번호"로 대조하고,
+    // 일련번호가 없는 예전 데이터는 주문번호+스타일넘버+옵션 조합으로 보조 대조
+    setOrderSaleOrderNos(await loadSaleLineKeys())
 
     const { data: extraData } = await supabase
       .from('musinsa_settlement_extra_fees')
@@ -2550,14 +2577,14 @@ export default function MusinsaPage() {
                             // 환불행은 그 주문의 "판매" 건이 데이터에 있을 때만 -N으로 차감하고,
                             // 원래 판매 기록이 없으면 0으로 표시 (팔지 않은 수량이 마이너스로 잡히지 않도록)
                             const isRefundRow = !!(r.order_type?.includes('반품') || r.order_type?.includes('환불'))
-                            const hasSale = isRefundRow && orderSaleOrderNos.has((r.order_no || '').trim())
+                            const hasSale = isRefundRow && refundHasMatchingSale(r, orderSaleOrderNos)
                             const displayQty = isRefundRow
                               ? (hasSale ? `-${r.qty && r.qty > 0 ? r.qty : 1}${!r.qty ? '(추정)' : ''}` : '0')
                               : (r.qty || 0)
                             const tip = isRefundRow
                               ? (hasSale
                                   ? (!r.qty ? '파일에 수량이 0으로 찍혀있어 1개로 추정' : undefined)
-                                  : '같은 주문번호의 판매 건이 데이터에 없어서 0으로 처리 (해당 기간 정산내역을 올리면 -1로 반영됨)')
+                                  : '같은 주문(주문일련번호)의 판매 건이 데이터에 없어서 0으로 처리 (원래 판매분이 있는 기간의 정산내역을 올리면 -1로 반영됨)')
                               : undefined
                             return (
                               <td style={{
