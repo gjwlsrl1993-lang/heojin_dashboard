@@ -43,7 +43,7 @@ type SeedingRecord = {
 }
 
 type SalesDetailData = {
-  channels: { name: string; qty: number; revenue: number; net: number }[]
+  channels: { name: string; qty: number; revenue: number | null; net: number | null }[]
   totalQty: number
   totalRevenue: number
   totalNet: number
@@ -466,61 +466,60 @@ export default function InventoryPage() {
       normalizeSkuKey(r.style_no) === skuKey &&
       normalizeOptKey(r.option_name) === optKey
 
-    const [musinsaRes, cafe24Res, wooRes, reketRes, clamanRes] = await Promise.all([
-      supabase.from('musinsa_settlement_lines').select('style_no, option_name, qty, order_type, revenue_ao, net_settlement, commission_sale, discount, musinsa_coupon, musinsa_cart_coupon, reward_points, penalty, claim_shipping_fee, review_boost, mfs_logistics'),
-      supabase.from('cafe24_settlement_lines').select('style_no, option_name, sale_amount'),
-      supabase.from('woo_settlement_lines').select('style_no, option_name, sale_amount'),
+    const [musinsaRes, pendingRes, cafe24Res, wooRes, reketRes, clamanRes] = await Promise.all([
+      supabase.from('musinsa_settlement_lines').select('style_no, option_name, qty, sale_amount, revenue_ao, final_amount'),
+      // 배송중(정산 대기) — 송장파일로 등록됐지만 아직 정산내역에 안 나온 주문 (별도 테이블, 금액 없이 수량만 있음)
+      supabase.from('musinsa_pending_orders').select('style_no, option_name, qty'),
+      supabase.from('cafe24_settlement_lines').select('style_no, option_name, sale_amount, discount_amount'),
+      supabase.from('woo_settlement_lines').select('style_no, option_name, sale_amount, discount_amount'),
       supabase.from('reket_settlement_lines').select('style_no, option_name, sale_amount, discount_amount'),
       supabase.from('claman_settlement_lines').select('style_no, option_name, sale_amount'),
     ])
 
     if (musinsaRes.error) console.error('musinsa_settlement_lines load error:', musinsaRes.error)
+    if (pendingRes.error) console.error('musinsa_pending_orders load error:', pendingRes.error)
     if (cafe24Res.error) console.error('cafe24_settlement_lines load error:', cafe24Res.error)
     if (wooRes.error) console.error('woo_settlement_lines load error:', wooRes.error)
     if (reketRes.error) console.error('reket_settlement_lines load error:', reketRes.error)
     if (clamanRes.error) console.error('claman_settlement_lines load error:', clamanRes.error)
 
     const musinsaRows: any[] = (musinsaRes.data || []).filter(isMatch)
+    const pendingRows: any[] = (pendingRes.data || []).filter(isMatch)
     const cafe24Rows: any[] = (cafe24Res.data || []).filter(isMatch)
     const wooRows: any[] = (wooRes.data || []).filter(isMatch)
     const reketRows: any[] = (reketRes.data || []).filter(isMatch)
     const clamanRows: any[] = (clamanRes.data || []).filter(isMatch)
 
-    // 아래 계산식은 전부 각 채널 페이지(musinsa/cafe24/woo/reket/claman page.tsx)의 공식을 그대로 재사용 —
-    // 환불행을 별도로 걸러내지 않고 전체 라인을 합산해서(음수 금액이 자연스럽게 상쇄되도록) 채널 페이지 숫자와 항상 일치시킴
+    // 매출액/순매출액은 "판매된 것"만 반영 — 환불(반품) 행은 매출액 계산에서 제외.
+    // 판매수량(qty)은 기존처럼 환불을 차감한 순수량을 그대로 사용.
+    const isSoldRow = (r: any) => (r.sale_amount || 0) >= 0
 
-    // 무신사: order_type 텍스트로 환불 판정(반품/환불 조정행은 판매수량에서 -1로 상쇄), 순매출은
-    // net_settlement가 있으면 그대로, 없으면 커미션 항목 역산 — musinsa-page.tsx의 computeCommissionAndSettlement와 동일
-    const musinsaQty = musinsaRows.reduce((s, r) => {
-      // "일일정산확인" 파일엔 판매+환불이 한 행으로 이미 넷팅되어 qty=0으로 찍히는 order_type="판매/환불"이 있어서,
-      // 단독 환불(반품/환불)행과 구분해야 이중 차감을 피할 수 있음
-      const orderType = String(r.order_type || '')
-      const isPureRefund = orderType !== '' && !orderType.includes('판매') && (orderType.includes('환불') || orderType.includes('반품'))
-      return s + (isPureRefund ? -(r.qty || 1) : (r.qty || 0))
-    }, 0)
-    const musinsaRevenue = musinsaRows.reduce((s, r) => s + (r.revenue_ao || 0), 0)
-    const musinsaNet = musinsaRows.reduce((s, r) => {
-      if (r.net_settlement !== null && r.net_settlement !== undefined) return s + r.net_settlement
-      const gross = r.revenue_ao || 0
-      const discountTotal = (r.discount || 0) + (r.musinsa_coupon || 0) + (r.musinsa_cart_coupon || 0) + (r.reward_points || 0)
-      const totalCommission = (r.commission_sale || 0) - (r.penalty || 0) - (r.claim_shipping_fee || 0) - (r.review_boost || 0) - (r.mfs_logistics || 0) + discountTotal
-      return s + (gross - totalCommission)
-    }, 0)
+    // 무신사 배송중(정산 대기) 수량 — musinsa_pending_orders는 금액 정보가 없으므로 수량만 총판매에 반영
+    const musinsaShippingQty = pendingRows.reduce((s, r) => s + (r.qty || 0), 0)
 
-    // 자사몰: 판매금액 그대로 사용(할인 이중 차감 없음) + PG 수수료 3.5% — cafe24-page.tsx와 동일
+    const musinsaSoldRows = musinsaRows.filter(isSoldRow)
+    const musinsaQty = musinsaRows.reduce((s, r) => s + (r.qty || 0), 0)
+    // "매출액"은 무신사 정산 테이블의 revenue_ao(AO 매출액) 컬럼 기준 — sale_amount(판매금액)와는 다른 값
+    const musinsaRevenue = musinsaSoldRows.reduce((s, r) => s + (r.revenue_ao || 0), 0)
+    const musinsaNet = musinsaSoldRows.reduce((s, r) => s + (r.final_amount || 0), 0)
+
+    // 자사몰/WOO는 수량 컬럼이 없어 1행 = 1개, 판매금액이 음수면 환불(-1)로 계산
+    const cafe24SoldRows = cafe24Rows.filter(isSoldRow)
     const cafe24Qty = cafe24Rows.reduce((s, r) => s + ((r.sale_amount || 0) >= 0 ? 1 : -1), 0)
-    const cafe24Revenue = cafe24Rows.reduce((s, r) => s + (r.sale_amount || 0), 0)
-    const cafe24Net = cafe24Revenue - Math.round(cafe24Revenue * 0.035)
+    const cafe24Revenue = cafe24SoldRows.reduce((s, r) => s + ((r.sale_amount || 0) - (r.discount_amount || 0)), 0)
+    const cafe24Net = cafe24Revenue // 자사몰은 별도 수수료 컬럼이 없어 실결제 금액을 그대로 순매출로 봄
 
-    // WOO: 이미 할인 반영된 결제금액을 직접 입력, 입점 수수료 40% 고정 — woo-page.tsx와 동일
+    const wooSoldRows = wooRows.filter(isSoldRow)
     const wooQty = wooRows.reduce((s, r) => s + ((r.sale_amount || 0) >= 0 ? 1 : -1), 0)
-    const wooRevenue = wooRows.reduce((s, r) => s + (r.sale_amount || 0), 0)
-    const wooNet = wooRevenue - Math.round(wooRevenue * 0.40)
+    const wooRevenue = wooSoldRows.reduce((s, r) => s + (r.sale_amount || 0), 0) // WOO는 이미 할인 반영된 결제금액을 직접 입력
+    const wooFee = Math.round(wooRevenue * 0.40) // WOO 입점 수수료 40% (woo-page.tsx FEE_RATE와 동일)
+    const wooNet = wooRevenue - wooFee
 
     // REKET은 할인율에 따라 수수료가 슬라이딩(기본 30%, 할인 10%마다 -1%p, 0% 밑으로는 안 내려감) — reket-page.tsx와 동일 로직
+    const reketSoldRows = reketRows.filter(isSoldRow)
     const reketQty = reketRows.reduce((s, r) => s + ((r.sale_amount || 0) >= 0 ? 1 : -1), 0)
-    const reketRevenue = reketRows.reduce((s, r) => s + (r.sale_amount || 0), 0)
-    const reketNet = reketRows.reduce((s, r) => {
+    const reketRevenue = reketSoldRows.reduce((s, r) => s + (r.sale_amount || 0), 0)
+    const reketNet = reketSoldRows.reduce((s, r) => {
       const sale = r.sale_amount || 0
       const discount = r.discount_amount || 0
       const preAmount = sale + discount
@@ -531,11 +530,13 @@ export default function InventoryPage() {
     }, 0)
 
     // 클라만은 위탁 판매, 수수료 고정 30% — claman-page.tsx와 동일
+    const clamanSoldRows = clamanRows.filter(isSoldRow)
     const clamanQty = clamanRows.reduce((s, r) => s + ((r.sale_amount || 0) >= 0 ? 1 : -1), 0)
-    const clamanRevenue = clamanRows.reduce((s, r) => s + (r.sale_amount || 0), 0)
-    const clamanNet = clamanRevenue - Math.round(clamanRevenue * 0.30)
+    const clamanRevenue = clamanSoldRows.reduce((s, r) => s + (r.sale_amount || 0), 0)
+    const clamanFee = Math.round(clamanRevenue * 0.30)
+    const clamanNet = clamanRevenue - clamanFee
 
-    const totalQty = musinsaQty + cafe24Qty + wooQty + reketQty + clamanQty
+    const totalQty = musinsaQty + musinsaShippingQty + cafe24Qty + wooQty + reketQty + clamanQty
     const totalRevenue = musinsaRevenue + cafe24Revenue + wooRevenue + reketRevenue + clamanRevenue
     const totalNet = musinsaNet + cafe24Net + wooNet + reketNet + clamanNet
     const totalCost = (item.cost_price || 0) * totalQty
@@ -544,6 +545,7 @@ export default function InventoryPage() {
     setSalesDetailData({
       channels: [
         { name: '무신사', qty: musinsaQty, revenue: musinsaRevenue, net: musinsaNet },
+        { name: '무신사(배송)', qty: musinsaShippingQty, revenue: null, net: null },
         { name: '자사몰', qty: cafe24Qty, revenue: cafe24Revenue, net: cafe24Net },
         { name: 'WOO', qty: wooQty, revenue: wooRevenue, net: wooNet },
         { name: 'REKET', qty: reketQty, revenue: reketRevenue, net: reketNet },
@@ -758,17 +760,17 @@ export default function InventoryPage() {
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <input placeholder="상품명 / SKU / 카테고리 검색..." value={search}
             onChange={e => setSearch(e.target.value)}
-            style={{ padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', width: 220 }} />
+            style={{ padding: '8px 12px', border: '1px solid #94a3b8', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', width: 220 }} />
           <input ref={excelInputRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }}
             onChange={e => { const f = e.target.files?.[0]; if (f) handleExcelUpload(f) }} />
           <button onClick={() => excelInputRef.current?.click()} disabled={uploading}
-            style={{ padding: '9px 16px', border: '1px solid #e2e8f0', borderRadius: 8, background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#475569' }}>
+            style={{ padding: '9px 16px', border: '1px solid #94a3b8', borderRadius: 8, background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#475569' }}>
             {uploading ? '업로드 중...' : '📤 엑셀 업로드'}
           </button>
           <input ref={reorderExcelInputRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }}
             onChange={e => { const f = e.target.files?.[0]; if (f) handleReorderExcelUpload(f) }} />
           <button onClick={() => reorderExcelInputRef.current?.click()} disabled={uploadingReorder}
-            style={{ padding: '9px 16px', border: '1px solid #e2e8f0', borderRadius: 8, background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#475569' }}>
+            style={{ padding: '9px 16px', border: '1px solid #94a3b8', borderRadius: 8, background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#475569' }}>
             {uploadingReorder ? '업로드 중...' : '📤 리오더 업로드'}
           </button>
           <button onClick={deleteAllItems} disabled={saving}
@@ -780,19 +782,19 @@ export default function InventoryPage() {
 
       {/* 시즌 드롭다운 */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 12, color: '#757575', fontWeight: 600 }}>시즌:</span>
+        <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600 }}>시즌:</span>
         <select value={selectedSeason} onChange={e => setSelectedSeason(e.target.value)}
-          style={{ padding: '7px 12px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', background: '#fff', color: '#1e293b', fontWeight: 600, cursor: 'pointer', minWidth: 100 }}>
+          style={{ padding: '7px 12px', border: '1px solid #94a3b8', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', background: '#fff', color: '#1e293b', fontWeight: 600, cursor: 'pointer', minWidth: 100 }}>
           <option value="전체">전체</option>
           {SEASONS.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
-        <span style={{ fontSize: 12, color: '#757575', fontWeight: 600, marginLeft: 8 }}>카테고리:</span>
+        <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600, marginLeft: 8 }}>카테고리:</span>
         <select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)}
-          style={{ padding: '7px 12px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', background: '#fff', color: '#1e293b', fontWeight: 600, cursor: 'pointer', minWidth: 100 }}>
+          style={{ padding: '7px 12px', border: '1px solid #94a3b8', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', background: '#fff', color: '#1e293b', fontWeight: 600, cursor: 'pointer', minWidth: 100 }}>
           <option value="전체">전체</option>
           {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
-        <span style={{ fontSize: 12, color: '#757575' }}>
+        <span style={{ fontSize: 12, color: '#94a3b8' }}>
           {filteredSkuCount}개 SKU · 재고 {filteredStockQty}개 · 재고금액 {formatFullKRW(filteredStockValue)}
         </span>
       </div>
@@ -842,7 +844,7 @@ export default function InventoryPage() {
           </div>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button onClick={() => setShowAddForm(false)}
-              style={{ padding: '8px 18px', border: '1px solid #e2e8f0', borderRadius: 8, background: '#f8fafc', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>취소</button>
+              style={{ padding: '8px 18px', border: '1px solid #94a3b8', borderRadius: 8, background: '#f8fafc', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>취소</button>
             <button onClick={addItem} disabled={saving || !newItem.name}
               style={{ padding: '8px 18px', background: '#4f46e5', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
               {saving ? '저장 중...' : '등록'}
@@ -891,7 +893,7 @@ export default function InventoryPage() {
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
-                  <tr><td colSpan={18} style={{ textAlign: 'center', padding: 48, color: '#757575' }}>
+                  <tr><td colSpan={18} style={{ textAlign: 'center', padding: 48, color: '#94a3b8' }}>
                     {search ? '검색 결과가 없습니다.' : '+ 상품 추가 버튼으로 첫 상품을 등록해보세요.'}
                   </td></tr>
                 ) : filtered.map((item, idx) => {
@@ -1026,7 +1028,7 @@ export default function InventoryPage() {
                       <td style={{ padding: '10px 8px', textAlign: 'center' }}>
                         <button onClick={() => setReorderDetailItem(item)}
                           title="클릭해서 리오더 이력 보기"
-                          style={{ border: 'none', background: 'none', cursor: 'pointer', fontWeight: 700, color: '#757575', padding: '2px 8px', borderRadius: 6 }}
+                          style={{ border: 'none', background: 'none', cursor: 'pointer', fontWeight: 700, color: '#94a3b8', padding: '2px 8px', borderRadius: 6 }}
                           onMouseEnter={e => (e.currentTarget.style.background = '#f1f5f9')}
                           onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                           {itemReorderTotal}
@@ -1068,7 +1070,7 @@ export default function InventoryPage() {
                           {sponsorshipOutstanding(item.id) > 0 && (
                             <button onClick={() => returnSponsorship(item.id)}
                               title="회수 처리"
-                              style={{ border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontSize: 11, color: '#4f46e5', padding: '2px 6px', borderRadius: 6, fontWeight: 700 }}>
+                              style={{ border: '1px solid #94a3b8', background: '#fff', cursor: 'pointer', fontSize: 11, color: '#4f46e5', padding: '2px 6px', borderRadius: 6, fontWeight: 700 }}>
                               ↩ 회수
                             </button>
                           )}
@@ -1136,7 +1138,7 @@ export default function InventoryPage() {
                         ) : (
                           <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
                             <button onClick={() => { setEditingId(item.id); setEditValues({ ...item }) }}
-                              style={{ padding: '5px 10px', border: '1px solid #e2e8f0', borderRadius: 6, background: '#f8fafc', cursor: 'pointer', fontSize: 12, color: '#475569', fontWeight: 600 }}>
+                              style={{ padding: '5px 10px', border: '1px solid #94a3b8', borderRadius: 6, background: '#f8fafc', cursor: 'pointer', fontSize: 12, color: '#475569', fontWeight: 600 }}>
                               수정
                             </button>
                             <button onClick={() => deleteItem(item.id)}
@@ -1164,17 +1166,17 @@ export default function InventoryPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
               <div>
                 <div style={{ fontWeight: 800, fontSize: 16, color: '#0f172a' }}>{offlineDetailItem.name}</div>
-                <div style={{ fontSize: 12, color: '#757575', marginTop: 2 }}>{offlineDetailItem.sku} · {offlineDetailItem.option_name}</div>
+                <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>{offlineDetailItem.sku} · {offlineDetailItem.option_name}</div>
               </div>
               <button onClick={() => setOfflineDetailItem(null)}
-                style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, color: '#757575', fontWeight: 800 }}>×</button>
+                style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, color: '#94a3b8', fontWeight: 800 }}>×</button>
             </div>
 
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ background: '#f8fafc' }}>
                   {['매장', '재고'].map(h => (
-                    <th key={h} style={{ padding: '8px', textAlign: 'center', fontSize: 11, color: '#757575', fontWeight: 700, borderBottom: '1px solid #e2e8f0' }}>{h}</th>
+                    <th key={h} style={{ padding: '8px', textAlign: 'center', fontSize: 11, color: '#94a3b8', fontWeight: 700, borderBottom: '1px solid #94a3b8' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -1185,14 +1187,14 @@ export default function InventoryPage() {
                     <td style={{ padding: '8px', textAlign: 'center', fontWeight: 700, color: '#7c3aed' }}>{row.qty}개</td>
                   </tr>
                 ))}
-                <tr style={{ borderTop: '2px solid #e2e8f0', fontWeight: 800 }}>
+                <tr style={{ borderTop: '2px solid #94a3b8', fontWeight: 800 }}>
                   <td style={{ padding: '8px', textAlign: 'center' }}>합계</td>
                   <td style={{ padding: '8px', textAlign: 'center' }}>{offlineTotalFor(offlineDetailItem)}개</td>
                 </tr>
               </tbody>
             </table>
 
-            <div style={{ fontSize: 11, color: '#757575', marginTop: 12 }}>
+            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 12 }}>
               * 클라만 입고 수량에서 클라만 판매 수량을 뺀 값입니다. 다른 오프라인 매장이 추가되면 여기에 같이 표시됩니다.
             </div>
           </div>
@@ -1208,15 +1210,15 @@ export default function InventoryPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
               <div>
                 <div style={{ fontWeight: 800, fontSize: 16, color: '#0f172a' }}>{reorderDetailItem.name}</div>
-                <div style={{ fontSize: 12, color: '#757575', marginTop: 2 }}>{reorderDetailItem.sku}</div>
+                <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>{reorderDetailItem.sku}</div>
               </div>
               <button onClick={() => setReorderDetailItem(null)}
-                style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, color: '#757575', fontWeight: 800 }}>×</button>
+                style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, color: '#94a3b8', fontWeight: 800 }}>×</button>
             </div>
 
             {/* 새 리오더 직접 입력 폼 */}
             <div style={{ background: '#f8fafc', borderRadius: 10, padding: 12, marginBottom: 16 }}>
-              <div style={{ fontSize: 11, color: '#757575', fontWeight: 700, marginBottom: 8 }}>+ 리오더 직접 입력</div>
+              <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 8 }}>+ 리오더 직접 입력</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
                 <select value={newReorder.option_name} onChange={e => setNewReorder(v => ({ ...v, option_name: e.target.value }))} style={inlineInputStyle}>
                   <option value="">옵션 선택</option>
@@ -1237,13 +1239,13 @@ export default function InventoryPage() {
             </div>
 
             {reordersForSku(reorderDetailItem.sku).length === 0 ? (
-              <div style={{ textAlign: 'center', padding: 40, color: '#757575', fontSize: 13 }}>리오더 이력이 없습니다.</div>
+              <div style={{ textAlign: 'center', padding: 40, color: '#94a3b8', fontSize: 13 }}>리오더 이력이 없습니다.</div>
             ) : (
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                 <thead>
                   <tr style={{ background: '#f8fafc' }}>
                     {['일자', '옵션', '차수', '수량', '업체', '메모', ''].map(h => (
-                      <th key={h} style={{ padding: '8px', textAlign: 'center', fontSize: 11, color: '#757575', fontWeight: 700, borderBottom: '1px solid #e2e8f0' }}>{h}</th>
+                      <th key={h} style={{ padding: '8px', textAlign: 'center', fontSize: 11, color: '#94a3b8', fontWeight: 700, borderBottom: '1px solid #94a3b8' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -1258,7 +1260,7 @@ export default function InventoryPage() {
                         <td style={{ padding: '8px', textAlign: 'center', color: '#475569' }}>{r.round_no}차</td>
                         <td style={{ padding: '8px', textAlign: 'center', fontWeight: 700, color: '#4f46e5' }}>{r.qty}장</td>
                         <td style={{ padding: '8px', textAlign: 'center', color: '#64748b' }}>{r.vendor || '-'}</td>
-                        <td style={{ padding: '8px', textAlign: 'center', color: '#757575', fontSize: 12 }}>{r.memo || '-'}</td>
+                        <td style={{ padding: '8px', textAlign: 'center', color: '#94a3b8', fontSize: 12 }}>{r.memo || '-'}</td>
                         <td style={{ padding: '8px', textAlign: 'center' }}>
                           <button onClick={() => deleteReorder(r.id)}
                             style={{ border: 'none', background: 'none', color: '#e11d48', cursor: 'pointer', fontSize: 11 }}>
@@ -1283,34 +1285,34 @@ export default function InventoryPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
               <div>
                 <div style={{ fontWeight: 800, fontSize: 16, color: '#0f172a' }}>{salesDetailItem.name}</div>
-                <div style={{ fontSize: 12, color: '#757575', marginTop: 2 }}>{salesDetailItem.sku} · {salesDetailItem.option_name}</div>
+                <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>{salesDetailItem.sku} · {salesDetailItem.option_name}</div>
               </div>
               <button onClick={() => setSalesDetailItem(null)}
-                style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, color: '#757575', fontWeight: 800 }}>×</button>
+                style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, color: '#94a3b8', fontWeight: 800 }}>×</button>
             </div>
 
             {salesDetailLoading || !salesDetailData ? (
-              <div style={{ textAlign: 'center', padding: 40, color: '#757575' }}>불러오는 중...</div>
+              <div style={{ textAlign: 'center', padding: 40, color: '#94a3b8' }}>불러오는 중...</div>
             ) : (
               <>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginBottom: 16 }}>
                   <thead>
                     <tr style={{ background: '#f8fafc' }}>
                       {['채널', '판매수량', '매출액', '순매출액'].map(h => (
-                        <th key={h} style={{ padding: '8px', textAlign: 'center', fontSize: 11, color: '#757575', fontWeight: 700, borderBottom: '1px solid #e2e8f0' }}>{h}</th>
+                        <th key={h} style={{ padding: '8px', textAlign: 'center', fontSize: 11, color: '#94a3b8', fontWeight: 700, borderBottom: '1px solid #94a3b8' }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {salesDetailData.channels.map(c => (
                       <tr key={c.name}>
-                        <td style={{ padding: '8px', textAlign: 'center', fontWeight: 600 }}>{c.name}</td>
+                        <td style={{ padding: '8px', textAlign: 'center', fontWeight: 600, color: c.name === '무신사(배송)' ? '#94a3b8' : undefined }}>{c.name}</td>
                         <td style={{ padding: '8px', textAlign: 'center' }}>{c.qty}개</td>
-                        <td style={{ padding: '8px', textAlign: 'center' }}>{formatFullKRW(c.revenue)}</td>
-                        <td style={{ padding: '8px', textAlign: 'center' }}>{formatFullKRW(c.net)}</td>
+                        <td style={{ padding: '8px', textAlign: 'center' }}>{c.revenue == null ? '-' : formatFullKRW(c.revenue)}</td>
+                        <td style={{ padding: '8px', textAlign: 'center' }}>{c.net == null ? '-' : formatFullKRW(c.net)}</td>
                       </tr>
                     ))}
-                    <tr style={{ borderTop: '2px solid #e2e8f0', fontWeight: 800 }}>
+                    <tr style={{ borderTop: '2px solid #94a3b8', fontWeight: 800 }}>
                       <td style={{ padding: '8px', textAlign: 'center' }}>합계</td>
                       <td style={{ padding: '8px', textAlign: 'center' }}>{salesDetailData.totalQty}개</td>
                       <td style={{ padding: '8px', textAlign: 'center' }}>{formatFullKRW(salesDetailData.totalRevenue)}</td>
@@ -1332,7 +1334,7 @@ export default function InventoryPage() {
                   </div>
                 </div>
 
-                <div style={{ fontSize: 11, color: '#757575', marginTop: 12 }}>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 12 }}>
                   * 무신사/자사몰/WOO/REKET/클라만 정산 데이터를 모두 합산한 값입니다.
                 </div>
               </>
@@ -1350,14 +1352,14 @@ export default function InventoryPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
               <div>
                 <div style={{ fontWeight: 800, fontSize: 16, color: '#0f172a' }}>⚠ 재고 부족 상품</div>
-                <div style={{ fontSize: 12, color: '#757575', marginTop: 2 }}>가용 재고 5개 이하 · 시즌별로 표시</div>
+                <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>가용 재고 5개 이하 · 시즌별로 표시</div>
               </div>
               <button onClick={() => setShowLowStockModal(false)}
-                style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, color: '#757575', fontWeight: 800 }}>×</button>
+                style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: 18, color: '#94a3b8', fontWeight: 800 }}>×</button>
             </div>
 
             {lowStockItems.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: 40, color: '#757575', fontSize: 13 }}>재고 부족 상품이 없습니다.</div>
+              <div style={{ textAlign: 'center', padding: 40, color: '#94a3b8', fontSize: 13 }}>재고 부족 상품이 없습니다.</div>
             ) : (
               Array.from(
                 lowStockItems.reduce((map, r) => {
@@ -1398,10 +1400,10 @@ export default function InventoryPage() {
 
 function KpiCard({ label, value, sub, color }: { label: string; value: string; sub: string; color?: string }) {
   return (
-    <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, padding: 18 }}>
-      <div style={{ fontSize: 11, color: '#757575', fontWeight: 700, marginBottom: 8 }}>{label}</div>
+    <div style={{ background: '#fff', border: '1px solid #94a3b8', borderRadius: 14, padding: 18 }}>
+      <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 8 }}>{label}</div>
       <div style={{ fontSize: 22, fontWeight: 800, color: color || '#0f172a', marginBottom: 4 }}>{value}</div>
-      <div style={{ fontSize: 12, color: '#757575' }}>{sub}</div>
+      <div style={{ fontSize: 12, color: '#94a3b8' }}>{sub}</div>
     </div>
   )
 }
@@ -1411,7 +1413,7 @@ function FormField({ label, value, onChange, placeholder, type = 'text' }: any) 
     <div>
       <div style={labelStyle}>{label}</div>
       <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-        style={{ width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', background: '#fff' }} />
+        style={{ width: '100%', padding: '8px 10px', border: '1px solid #94a3b8', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', background: '#fff' }} />
     </div>
   )
 }
@@ -1435,8 +1437,8 @@ function groupHeaderStyle(color: string, emphasized = false): React.CSSPropertie
     background: emphasized ? `${color}0d` : undefined,
   }
 }
-const groupHeaderSubStyle: React.CSSProperties = { fontSize: 9, color: '#757575', fontWeight: 600, marginLeft: 4, textTransform: 'uppercase' }
+const groupHeaderSubStyle: React.CSSProperties = { fontSize: 9, color: '#94a3b8', fontWeight: 600, marginLeft: 4, textTransform: 'uppercase' }
 
-const labelStyle: React.CSSProperties = { fontSize: 11, color: '#757575', fontWeight: 700, marginBottom: 4 }
-const selectStyle: React.CSSProperties = { width: '100%', padding: '8px 10px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', background: '#fff' }
-const inlineInputStyle: React.CSSProperties = { padding: '5px 8px', border: '1px solid #e2e8f0', borderRadius: 6, fontSize: 12, fontFamily: 'inherit', background: '#fff', width: '100%' }
+const labelStyle: React.CSSProperties = { fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 4 }
+const selectStyle: React.CSSProperties = { width: '100%', padding: '8px 10px', border: '1px solid #94a3b8', borderRadius: 8, fontSize: 13, fontFamily: 'inherit', background: '#fff' }
+const inlineInputStyle: React.CSSProperties = { padding: '5px 8px', border: '1px solid #94a3b8', borderRadius: 6, fontSize: 12, fontFamily: 'inherit', background: '#fff', width: '100%' }
