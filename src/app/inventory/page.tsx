@@ -713,14 +713,19 @@ export default function InventoryPage() {
     return year * 2 + half
   }
 
-  const filtered = items
-    .filter(r => {
-      const matchSearch = !search || r.name?.includes(search) || r.category?.includes(search) ||
-        r.sku?.includes(search) || r.option_name?.includes(search)
-      const matchSeason = selectedSeason === '전체' || r.season === selectedSeason
-      const matchCategory = selectedCategory === '전체' || r.category === selectedCategory
-      return matchSearch && matchSeason && matchCategory
-    })
+  const preFilteredForCount = items.filter(r => {
+    const matchSearch = !search || r.name?.includes(search) || r.category?.includes(search) ||
+      r.sku?.includes(search) || r.option_name?.includes(search)
+    const matchSeason = selectedSeason === '전체' || r.season === selectedSeason
+    const matchCategory = selectedCategory === '전체' || r.category === selectedCategory
+    return matchSearch && matchSeason && matchCategory
+  })
+  // 같은 스타일넘버 그룹 안에 옵션(사이즈)이 여러 개 있는 경우에만 재고 0인 옵션을 맨 아래로 내림 —
+  // 옵션이 하나뿐인(실질적으로 옵션 구분이 없는) 상품은 내릴 대상이 없으므로 그대로 둠
+  const skuGroupCounts = new Map<string, number>()
+  preFilteredForCount.forEach(r => { const k = r.sku || ''; skuGroupCounts.set(k, (skuGroupCounts.get(k) || 0) + 1) })
+
+  const filtered = preFilteredForCount
     .sort((a, b) => {
       // 배수/총판매/총재고/온라인재고 정렬 버튼이 눌려있으면 그 기준으로 정렬 (그룹 병합은 꺼짐)
       if (sortBy) {
@@ -735,7 +740,13 @@ export default function InventoryPage() {
       const skuA = a.sku || ''
       const skuB = b.sku || ''
       if (skuA !== skuB) return skuA.localeCompare(skuB) // 같은 시즌 안에서는 스타일넘버순 (같은 상품 그룹 병합의 기준)
-      const optionDiff = optionSortValue(a.option_name) - optionSortValue(b.option_name) // 같은 스타일넘버 안에서는 XS→S→M→L→XL 순
+      const hasMultipleOptions = (skuGroupCounts.get(skuA) || 0) > 1
+      if (hasMultipleOptions) {
+        const zeroA = computeAvailable(a) === 0 ? 1 : 0
+        const zeroB = computeAvailable(b) === 0 ? 1 : 0
+        if (zeroA !== zeroB) return zeroA - zeroB // 재고 있는 옵션 먼저, 재고 0인 옵션은 맨 아래로
+      }
+      const optionDiff = optionSortValue(a.option_name) - optionSortValue(b.option_name) // 같은 재고 유무 그룹 안에서는 XS→S→M→L→XL 순
       if (optionDiff !== 0) return optionDiff
       return a.name.localeCompare(b.name)
     })
@@ -927,8 +938,15 @@ export default function InventoryPage() {
 
                   const isLastOfGroup = showMergedCells ? (idx + 1 >= filtered.length || filtered[idx + 1].sku !== item.sku) : true
 
+                  // 같은 스타일넘버 그룹 안에서, 재고 있는 옵션 다음에 재고 0인 옵션이 처음 나오는 지점에 구분선 표시
+                  const isZeroStockBoundary = groupingEnabled && !!prevItem && prevItem.sku === item.sku
+                    && avail === 0 && computeAvailable(prevItem) > 0
+
                   return (
-                    <tr key={item.id} style={{ borderBottom: isLastOfGroup ? `1px solid ${CELL_BORDER_COLOR}` : '1px solid #f8fafc' }}
+                    <tr key={item.id} style={{
+                      borderBottom: isLastOfGroup ? `1px solid ${CELL_BORDER_COLOR}` : '1px solid #f8fafc',
+                      borderTop: isZeroStockBoundary ? `2px solid ${CELL_BORDER_COLOR}` : undefined,
+                    }}
                       onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
                       onMouseLeave={e => (e.currentTarget.style.background = '')}>
 
