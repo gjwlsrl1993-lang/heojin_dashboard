@@ -713,14 +713,23 @@ export default function InventoryPage() {
     return year * 2 + half
   }
 
-  const filtered = items
-    .filter(r => {
-      const matchSearch = !search || r.name?.includes(search) || r.category?.includes(search) ||
-        r.sku?.includes(search) || r.option_name?.includes(search)
-      const matchSeason = selectedSeason === '전체' || r.season === selectedSeason
-      const matchCategory = selectedCategory === '전체' || r.category === selectedCategory
-      return matchSearch && matchSeason && matchCategory
-    })
+  const filteredBase = items.filter(r => {
+    const matchSearch = !search || r.name?.includes(search) || r.category?.includes(search) ||
+      r.sku?.includes(search) || r.option_name?.includes(search)
+    const matchSeason = selectedSeason === '전체' || r.season === selectedSeason
+    const matchCategory = selectedCategory === '전체' || r.category === selectedCategory
+    return matchSearch && matchSeason && matchCategory
+  })
+
+  // 스타일넘버(같은 상품) 안의 옵션 중 하나라도 재고가 남아있으면 그 그룹은 그대로 두고,
+  // 전 옵션이 재고 0인 스타일넘버만 목록 맨 아래로 내림 (정렬 버튼이 눌려있지 않은 기본 정렬에서만 적용)
+  const skuHasStock = new Map<string, boolean>()
+  filteredBase.forEach(r => {
+    if (computeAvailable(r) > 0) skuHasStock.set(r.sku, true)
+    else if (!skuHasStock.has(r.sku)) skuHasStock.set(r.sku, false)
+  })
+
+  const filtered = filteredBase
     .sort((a, b) => {
       // 배수/총판매/총재고/온라인재고 정렬 버튼이 눌려있으면 그 기준으로 정렬 (그룹 병합은 꺼짐)
       if (sortBy) {
@@ -730,6 +739,9 @@ export default function InventoryPage() {
         if (diff !== 0) return diff
         return a.name.localeCompare(b.name)
       }
+      const aOutOfStock = !skuHasStock.get(a.sku)
+      const bOutOfStock = !skuHasStock.get(b.sku)
+      if (aOutOfStock !== bOutOfStock) return aOutOfStock ? 1 : -1 // 전 옵션 품절인 스타일넘버는 맨 아래로
       const seasonDiff = seasonSortValue(b.season) - seasonSortValue(a.season) // 최신 시즌 먼저
       if (seasonDiff !== 0) return seasonDiff
       const skuA = a.sku || ''
@@ -927,10 +939,13 @@ export default function InventoryPage() {
 
                   const isLastOfGroup = showMergedCells ? (idx + 1 >= filtered.length || filtered[idx + 1].sku !== item.sku) : true
 
+                  // 재고(총재고)가 0인 옵션은 회색 박스로 눈에 띄게 표시 — 오프라인이라도 재고가 남아있으면 정상 표시
+                  const isOutOfStock = avail === 0
+
                   return (
-                    <tr key={item.id} style={{ borderBottom: isLastOfGroup ? `1px solid ${CELL_BORDER_COLOR}` : '1px solid #f8fafc' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
-                      onMouseLeave={e => (e.currentTarget.style.background = '')}>
+                    <tr key={item.id} style={{ borderBottom: isLastOfGroup ? `1px solid ${CELL_BORDER_COLOR}` : '1px solid #f8fafc', background: isOutOfStock ? '#d3d7db' : undefined }}
+                      onMouseEnter={e => (e.currentTarget.style.background = isOutOfStock ? '#c8cdd2' : '#f8fafc')}
+                      onMouseLeave={e => (e.currentTarget.style.background = isOutOfStock ? '#d3d7db' : '')}>
 
                       {isGroupStart && (
                         <td rowSpan={rowSpanValue} style={{ padding: '10px 8px', textAlign: 'center', verticalAlign: 'middle' }}>
